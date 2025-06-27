@@ -25,7 +25,6 @@ add_requires("assimp",{system = false })
 -- ////////////////
 targetName = "HelloDX"
 target(targetName)
-    set_group("Project 01-09")
     set_kind("binary")
     set_targetdir(path.join(binDir,targetName))
     add_dx_sdk_options()
