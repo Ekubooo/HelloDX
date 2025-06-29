@@ -30,5 +30,9 @@ target(targetName)
     add_dx_sdk_options()
     add_headerfiles("**.h")
     add_files("**.cpp")
+    -- Shader
+    add_rules("hlsl_shader_complier")
+    add_headerfiles("HLSL/**.hlsl|HLSL/**.hlsli")
+    add_files("HLSL/**.hlsl|HLSL/**.hlsli")
 target_end()
 -- ////////////////
