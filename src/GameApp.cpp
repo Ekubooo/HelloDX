@@ -82,9 +82,9 @@ bool GameApp::InitResource()
     VertexPosColor vertices[] = 
     {
         // ARGB???
-        { XMFLOAT3(0.0f, 0.5f, 0.5f),   XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f) },
-        { XMFLOAT3(0.5f, -0.5f, 0.5f),  XMFLOAT4(0.0f, 0.0f, 1.0f, 0.0f) },
-        { XMFLOAT3(-0.5f, -0.5f, 0.5f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) }
+        { XMFLOAT3(0.0f, 0.5f, 0.5f),   XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { XMFLOAT3(0.5f, -0.5f, 0.5f),  XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+        { XMFLOAT3(-0.5f, -0.5f, 0.5f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
     };
 
     // Vertex buffer description
