@@ -27,12 +27,11 @@ public:
     virtual void DrawScene() = 0;               // 子类需要实现该方法，完成每一帧的绘制
     virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     // 窗口的消息回调函数
-    
 protected:
-    bool InitMainWindow();      // 窗口初始化
-    bool InitDirect3D();        // Direct3D初始化
+    bool InitMainWindow();       // 窗口初始化
+    bool InitDirect3D();         // Direct3D初始化
 
-    void CalculateFrameStats(); // 计算每秒帧数并在窗口显示
+    void CalculateFrameStats();  // 计算每秒帧数并在窗口显示
 
 protected:
 
@@ -66,9 +65,9 @@ protected:
     D3D11_VIEWPORT m_ScreenViewport;                      // 视口
 
     // 派生类应该在构造函数设置好这些自定义的初始参数
-    std::wstring m_MainWndCaption;                       // 主窗口标题
-    int m_ClientWidth;                                   // 视口宽度
-    int m_ClientHeight;                                  // 视口高度
+    std::wstring m_MainWndCaption;                        // 主窗口标题
+    int m_ClientWidth;                                    // 视口宽度
+    int m_ClientHeight;                                   // 视口高度
 };
 
 #endif // D3DAPP_H

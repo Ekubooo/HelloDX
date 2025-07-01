@@ -176,6 +176,6 @@ HRESULT CreateShaderFromFile(
     const WCHAR* hlslFileName,
     LPCSTR entryPoint,
     LPCSTR shaderModel,
-    ID3DBlob** ppBolbOut );
+    ID3DBlob** ppBlobOut );
 
 #endif

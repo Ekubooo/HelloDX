@@ -6,12 +6,12 @@ HRESULT CreateShaderFromFile (
     const WCHAR *hlslFileName, 
     LPCSTR entryPoint, 
     LPCSTR shaderModel, 
-    ID3DBlob **ppBolbOut )
+    ID3DBlob **ppBlobOut )
 {
     HRESULT hr = S_OK;
 
     // find vertex shader that was already compiled
-    if (csoFileNameInOut && D3DReadFileToBlob(csoFileNameInOut, ppBolbOut) == S_OK)
+    if (csoFileNameInOut && D3DReadFileToBlob(csoFileNameInOut, ppBlobOut) == S_OK)
     {
         return hr;
     }
@@ -29,7 +29,7 @@ HRESULT CreateShaderFromFile (
 #endif
         ID3DBlob* errorBlob = nullptr;
         hr = D3DCompileFromFile(hlslFileName, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                 entryPoint, shaderModel, dwShaderFlags, 0, ppBolbOut, & errorBlob);
+                 entryPoint, shaderModel, dwShaderFlags, 0, ppBlobOut, & errorBlob);
         if (FAILED(hr))
         {
             if (errorBlob != nullptr)
@@ -43,7 +43,7 @@ HRESULT CreateShaderFromFile (
         // if already assign output file name, return the shader byte information
         if (csoFileNameInOut)
         {
-            return D3DWriteBlobToFile(*ppBolbOut, csoFileNameInOut, FALSE);
+            return D3DWriteBlobToFile(*ppBlobOut, csoFileNameInOut, FALSE);
         }
     }
     return hr;

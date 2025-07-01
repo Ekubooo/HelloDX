@@ -16,7 +16,10 @@ const D3D11_INPUT_ELEMENT_DESC GameApp::VertexPosColor::inputLayout[2] =
 GameApp::GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight)
     : D3DApp(hInstance, windowName, initWidth, initHeight) { }
 
-GameApp::~GameApp() { }
+GameApp::~GameApp() 
+{
+
+}
 
 bool GameApp::Init()
 {
@@ -28,6 +31,31 @@ bool GameApp::Init()
         return false;
 
     return true;
+}
+
+void GameApp::OnResize()
+{
+    D3DApp::OnResize();
+}
+
+void GameApp::UpdateScene(float dt)
+{
+
+}
+
+void GameApp::DrawScene()
+{
+    assert(m_pd3dImmediateContext);
+    assert(m_pSwapChain);
+    // static float blue[4] = { 0.0f, 0.0f, 1.0f, 1.0f };  // RGBA = (0,0,255,255)
+    static float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };  
+    m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), black);
+    m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    // draw triangle
+    m_pd3dImmediateContext->Draw(3, 0);
+
+    HR(m_pSwapChain->Present(0, 0));
 }
 
 bool GameApp::InitEffect()
@@ -99,26 +127,5 @@ bool GameApp::InitResource()
     return true;
 }
 
-void GameApp::OnResize()
-{
-    D3DApp::OnResize();
-}
 
-void GameApp::UpdateScene(float dt)
-{
-}
 
-void GameApp::DrawScene()
-{
-    assert(m_pd3dImmediateContext);
-    assert(m_pSwapChain);
-    // static float blue[4] = { 0.0f, 0.0f, 1.0f, 1.0f };  // RGBA = (0,0,255,255)
-    static float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };  
-    m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), black);
-    m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    // draw triangle
-    m_pd3dImmediateContext->Draw(3, 0);
-
-    HR(m_pSwapChain->Present(0, 0));
-}

@@ -22,8 +22,8 @@ public:
     void DrawScene();
 
 private:
-    bool GameApp::InitEffect();
-    bool GameApp::InitResource();
+    bool InitEffect();
+    bool InitResource();
 
 private:
     ComPtr<ID3D11InputLayout>   m_pVertexLayout;    // input layout
