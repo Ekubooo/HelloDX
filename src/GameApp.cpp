@@ -5,13 +5,12 @@
 using namespace DirectX;
 
 // static member init 
+// {SemanticName, SemanticIndex, Format, InputSlot, ByteOffset, SlotClass, ???}
 const D3D11_INPUT_ELEMENT_DESC GameApp::VertexPosColor::inputLayout[2] = 
 {   
-    // init the layout of shader's structure, almost same as opengl's method
-    // {SemanticName, SemanticIndex, Format, InputSlot, ByteOffset, SlotClass, ???}
     {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0 , D3D11_INPUT_PER_VERTEX_DATA, 0},
-    {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
-};  
+    {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0} 
+};  // init the layout of shader's structure, almost same as opengl's method
 
 GameApp::GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight)
     : D3DApp(hInstance, windowName, initWidth, initHeight) { }
@@ -82,10 +81,10 @@ bool GameApp::InitResource()
     // order in which the three vertices are given should be arranged clockwise
     VertexPosColor vertices[] = 
     {
-        { XMFLOAT3(0.0f, 0.5f, 0.5f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(0.5f, -0.5f, 0.5f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(-0.5f, -0.5f, 0.5f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
-        // { XMFLOAT3(-0.5f, -0.5f, 0.5f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) }
+        // ARGB???
+        { XMFLOAT3(0.0f, 0.5f, 0.5f),   XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f) },
+        { XMFLOAT3(0.5f, -0.5f, 0.5f),  XMFLOAT4(0.0f, 0.0f, 1.0f, 0.0f) },
+        { XMFLOAT3(-0.5f, -0.5f, 0.5f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) }
     };
 
     // Vertex buffer description
@@ -109,10 +108,11 @@ bool GameApp::InitResource()
     // vertex buffer setting
     UINT stride = sizeof(VertexPosColor);
     UINT offset = 0;
+    m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 
     // setting the Primitive type and input layout
-    m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
     m_pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_pd3dImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
 
     // bind shader on RP
     m_pd3dImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
