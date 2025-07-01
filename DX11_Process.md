@@ -1,6 +1,8 @@
 ## the whole process of dx based graphics engine
-- started with main function:
+### overall initiative DX11
+- start with main() function:
 
+```
 create GameApp instance     // D3DAPP() or GameApp()
     constructor function: initiative and bind instance to global pointer.
     
@@ -32,11 +34,13 @@ GameApp.Run()               // D3DAPP.Run();
         DrawScene()
             ClearRenderTargetView();
             ClearDepthStencilView();
-            Present();      // swap and present
+            Present();      // swap the chain and present
 
-destruction instance        // ~D3DApp();
+instance destruction        // ~D3DApp();
+```
 
-
+### Render Pipeline
+- start with 
 
 
 

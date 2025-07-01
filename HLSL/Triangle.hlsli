@@ -6,6 +6,6 @@ struct VertexIn
 
 struct VertexOut
 {
-    float4 posH : SV_Position;
+    float4 posH : SV_POSITION;
     float4 color : COLOR;
 };
