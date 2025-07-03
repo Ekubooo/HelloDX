@@ -6,7 +6,15 @@
 build/
 
 nil/
+
+PICTURE RECORD/
+
 # MacOS Cache
 .DS_Store
 
+# File type
+**.gif
 
+**.png
+
+**.jpg

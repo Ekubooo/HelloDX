@@ -13,7 +13,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE prevInstance,
 #endif
 
     // GameApp theApp(hInstance, L"DirectX11 Initialization", 1280, 720);
-    GameApp theApp(hInstance, L"generate a Triangle", 1280, 720);
+    GameApp theApp(hInstance, L"A Rotating cube", 1280, 720);
 
     if (!theApp.Init())
         return 0;
