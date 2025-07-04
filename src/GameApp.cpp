@@ -95,7 +95,30 @@ void GameApp::UpdateScene(float dt)
     }
 
     ImGui::End();
-    // imgui end //////////////////////////////////
+    // ImGui end ///////////////////////////////////
+
+    // device control event ////////////////////////
+    if (!ImGui::IsAnyItemActive())
+    {
+        if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+        {   // mouse event moving (left click)
+            tx += io.MouseDelta.x * 0.01f;
+            ty -= io.MouseDelta.y * 0.01f;
+        }
+        
+        else if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+        {   // mouse event rotating (right click)
+            phi -= io.MouseDelta.y * 0.01f;
+            theta -= io.MouseDelta.x * 0.01f;   
+        }
+        else if (io.MouseWheel != 0)
+        {
+            scale += 0.02 * io.MouseWheel;
+            if (scale > 2.0f) scale = 2.0f;
+            else if (scale < 0.2f) scale = 0.2f;
+        }     
+    }
+    // device control event end ////////////////////
     
     // update constant buffer
     m_cBuffer.world = XMMatrixTranspose(
