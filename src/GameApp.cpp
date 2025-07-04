@@ -39,14 +39,72 @@ void GameApp::OnResize()
 
 void GameApp::UpdateScene(float dt)
 {
-    ImGui::ShowAboutWindow();
-    ImGui::ShowDemoWindow();
-    ImGui::ShowUserGuide();
+    // imgui example component
+    // ImGui::ShowAboutWindow();
+    // ImGui::ShowDemoWindow();
+    // ImGui::ShowUserGuide(); 
+    
+    // get IO event
+    ImGuiIO& io = ImGui::GetIO();
 
-    static float phi = 0.0f, theta = 0.0f;
-    phi += 0.3f * dt, theta += 0.37f * dt;
-    m_cBuffer.world = XMMatrixTranspose(XMMatrixRotationX(phi) * XMMatrixRotationY(theta));
-    // update const buffer, let cube rotate!
+    // custom window and operation
+    static float tx = 0.0f, ty = 0.0f, phi = 0.0f, 
+        theta = 0.0f, scale = 1.0f, fov = XM_PIDIV2;
+    static bool animateCube = true, customColor = false;
+    if (animateCube)
+    {
+        phi += 0.3f * dt;
+        theta += 0.37f * dt;
+        phi = XMScalarModAngle(phi);
+        theta = XMScalarModAngle(theta);
+    }
+
+    // imgui start  ///////////////////////////////
+    if (ImGui::Begin("Using ImGui"))
+    {
+        ImGui::Checkbox("animate cube", &animateCube);   // check box
+        // next component at 25 pxiel far in right side of same line
+        ImGui::SameLine(0.0f, 25.0f);   
+        if (ImGui::Button("reset params"))
+        {
+            tx = ty = phi = theta = 0.0f;
+            scale = 1.0f;
+            fov = XM_PIDIV2;
+        }
+        // 
+        ImGui::Text("phi: %.2f degrees", XMConvertToDegrees(phi));
+        ImGui::SliderFloat("##1", &phi, -XM_PI, XM_PI, "");
+        ImGui::Text("theta: %.2f degrees", XMConvertToDegrees(theta));
+        ImGui::SliderFloat("##2", &theta, -XM_PI, XM_PI, "");
+
+        ImGui::Text("Position: (%.1f, %.1f, 0.0)", tx, ty);
+
+        ImGui::Text("FOV: %.2f degrees", XMConvertToDegrees(fov));
+        ImGui::SliderFloat("##3", &fov, XM_PIDIV4, XM_PI / 3 * 2, "");
+
+        if (ImGui::Checkbox("using custom color", &customColor))
+        {
+            m_cBuffer.useCustomColor = customColor;
+        }
+
+        if (customColor)
+        {
+            ImGui::ColorEdit3("Color", reinterpret_cast<float*>(&m_cBuffer.color));
+        }
+    }
+
+    ImGui::End();
+    // imgui end //////////////////////////////////
+    
+    // update constant buffer
+    m_cBuffer.world = XMMatrixTranspose(
+        XMMatrixScalingFromVector(XMVectorReplicate(scale)) * 
+        XMMatrixRotationX(phi) * XMMatrixRotationY(theta) *
+        XMMatrixTranslation(tx, ty, 0.0f));
+    m_cBuffer.proj = XMMatrixTranspose
+        (XMMatrixPerspectiveFovLH(fov, AspectRatio(), 1.0f, 1000.0f));
+
+    // update constant buffer, let cube rotate!
     D3D11_MAPPED_SUBRESOURCE mppedData;
     HR(m_pd3dImmediateContext->Map(m_pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mppedData));
     memcpy_s(mppedData.pData, sizeof(m_cBuffer), &m_cBuffer, sizeof(m_cBuffer));

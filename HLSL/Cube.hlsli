@@ -9,6 +9,8 @@ cbuffer ConstantBuffer : register(b0)
     matrix g_World; 
     matrix g_View;  
     matrix g_Proj;  
+    vector g_Color;
+    uint g_UseCustomColor;
 }
 
 struct VertexIn

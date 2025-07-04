@@ -1,7 +1,13 @@
 # Xmake cache
 .xmake/
 
+.vs/
+
 .vscode/
+
+.git/
+
+bin/
 
 build/
 
@@ -9,14 +15,29 @@ nil/
 
 PICTURE RECORD/
 
-bin/ 
+Debug/
+Release/
+x64/
+lib/
+vsxmake2022/
 
 # MacOS Cache
 .DS_Store
 
 # File type
 **.gif
-
 **.png
-
 **.jpg
+
+*.cso
+*.mbo
+*.inc
+*.ilk
+*.lib
+*.iobj
+*.ipdb
+*.pdb
+*.exp
+*.lastcodeanalysissucceeded
+!dxtex.exe
+*.exe

@@ -17,6 +17,9 @@ public:
         DirectX::XMMATRIX world;
         DirectX::XMMATRIX view;
         DirectX::XMMATRIX proj;
+        DirectX::XMFLOAT4 color;
+        uint32_t useCustomColor;
+        uint32_t pads[3];
     };
 
 public:

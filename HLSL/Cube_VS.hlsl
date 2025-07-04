@@ -11,7 +11,13 @@ VertexOut VS(VertexIn vIn)
     return vOut;
 }
 
-// use mul() instead of "*"
-// "*" operater required two matrix has same row and column
-// Cij = Aij * Bij
-// Alpha defult equals 1.0
+
+
+/* 
+
+** use mul() instead of "*"
+** "*" operater required two matrix has same row and column
+** Cij = Aij * Bij
+** Alpha defult equals 1.0 
+
+*/
