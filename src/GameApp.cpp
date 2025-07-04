@@ -39,6 +39,10 @@ void GameApp::OnResize()
 
 void GameApp::UpdateScene(float dt)
 {
+    ImGui::ShowAboutWindow();
+    ImGui::ShowDemoWindow();
+    ImGui::ShowUserGuide();
+
     static float phi = 0.0f, theta = 0.0f;
     phi += 0.3f * dt, theta += 0.37f * dt;
     m_cBuffer.world = XMMatrixTranspose(XMMatrixRotationX(phi) * XMMatrixRotationY(theta));
@@ -62,6 +66,13 @@ void GameApp::DrawScene()
     // draw triangle
     // m_pd3dImmediateContext->Draw(3, 0);
     m_pd3dImmediateContext->DrawIndexed(36, 0, 0);
+
+    // imgui start-up
+    ImGui::Render();
+
+    // imgui will trigger Direct3D Draw.
+    // need to bind backup_buffer on RP before here.
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     HR(m_pSwapChain->Present(0, 0));
 }

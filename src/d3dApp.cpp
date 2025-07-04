@@ -13,6 +13,9 @@ extern "C"
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 0x00000001;
 }
 
+// Reference external functions from ImGui lib
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 namespace
 {
     // This is just used to forward Windows messages from a global window
@@ -98,6 +101,11 @@ int D3DApp::Run()
             if (!m_AppPaused)
             {
                 CalculateFrameStats();
+                // imgui setting //////////
+                ImGui_ImplDX11_NewFrame();
+                ImGui_ImplWin32_NewFrame();
+                ImGui::NewFrame();
+                // imgui end setting //////
                 UpdateScene(m_Timer.DeltaTime());
                 DrawScene();
             }
@@ -117,6 +125,9 @@ bool D3DApp::Init()
         return false;
 
     if (!InitDirect3D())
+        return false;
+
+    if (!InitImGui())
         return false;
 
     return true;
@@ -206,6 +217,9 @@ void D3DApp::OnResize()
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(m_hMainWnd, msg, wParam, lParam))
+        return true;
+    
     switch (msg)
     {
         // WM_ACTIVATE is sent when the window is activated or deactivated.  
@@ -328,7 +342,6 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
-
 
 bool D3DApp::InitMainWindow()
 {
@@ -530,6 +543,23 @@ bool D3DApp::InitDirect3D()
     // 每当窗口被重新调整大小的时候，都需要调用这个OnResize函数。现在调用
     // 以避免代码重复
     OnResize();
+
+    return true;
+}
+
+bool D3DApp::InitImGui()
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // setting Style of Dear ImGui 
+    ImGui::StyleColorsDark();
+
+    // platfrom and render backend
+    ImGui_ImplWin32_Init(m_hMainWnd);
+    ImGui_ImplDX11_Init(m_pd3dDevice.Get(), m_pd3dImmediateContext.Get());
 
     return true;
 }
