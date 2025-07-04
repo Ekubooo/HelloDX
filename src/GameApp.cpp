@@ -43,7 +43,7 @@ void GameApp::UpdateScene(float dt)
     // ImGui::ShowAboutWindow();
     // ImGui::ShowDemoWindow();
     // ImGui::ShowUserGuide(); 
-    
+
     // get IO event
     ImGuiIO& io = ImGui::GetIO();
 
@@ -71,7 +71,8 @@ void GameApp::UpdateScene(float dt)
             scale = 1.0f;
             fov = XM_PIDIV2;
         }
-        // 
+        ImGui::SliderFloat("Scale", &scale, 0.2f, 2.0f);
+
         ImGui::Text("phi: %.2f degrees", XMConvertToDegrees(phi));
         ImGui::SliderFloat("##1", &phi, -XM_PI, XM_PI, "");
         ImGui::Text("theta: %.2f degrees", XMConvertToDegrees(theta));
@@ -211,7 +212,7 @@ bool GameApp::InitResource()
         4, 0, 3, 3, 7, 4
     }; 
 
-    // INIT: index buffer description 
+    // INIT: index buffer description /////////////////////
     D3D11_BUFFER_DESC ibd;  
     ZeroMemory(&ibd, sizeof(ibd));
     ibd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -225,7 +226,7 @@ bool GameApp::InitResource()
     //input Assemble setting for index buffer
     m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-    // constant buffer /////////////////////////////////////
+    // INIT: constant buffer description ///////////////////
     D3D11_BUFFER_DESC cbd;
     ZeroMemory(&cbd, sizeof(cbd));
     cbd.Usage = D3D11_USAGE_DYNAMIC;
@@ -241,11 +242,14 @@ bool GameApp::InitResource()
     m_cBuffer.view = XMMatrixTranspose(XMMatrixLookAtLH(
         XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f),
         XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-        XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
-    ));
+        XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)));
     m_cBuffer.proj = XMMatrixTranspose(
         XMMatrixPerspectiveFovLH(XM_PIDIV2, AspectRatio(), 1.0f, 1000.0f));
-    // TODO: here
+
+    m_cBuffer.color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    m_cBuffer.useCustomColor = false;
+
+    // TODO: here   //?
 
     // input Assemble //////////////////////////////////////
     // setting vertex buffer 
@@ -259,8 +263,10 @@ bool GameApp::InitResource()
 
     // bind shader to RP
     m_pd3dImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-        // bind the constant buffer that already update to the VS
+        // bind the constant buffer that already update to the VS (and PS!)
     m_pd3dImmediateContext->VSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
+    m_pd3dImmediateContext->PSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
+
     m_pd3dImmediateContext->PSSetShader(m_pPixelShader.Get() , nullptr, 0);
 
     // setting debug object name 
