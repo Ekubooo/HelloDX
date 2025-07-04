@@ -9,6 +9,8 @@ nil/
 
 PICTURE RECORD/
 
+bin/ 
+
 # MacOS Cache
 .DS_Store
 
