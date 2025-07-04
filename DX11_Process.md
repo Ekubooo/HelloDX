@@ -39,7 +39,7 @@ GameApp.Run()               // D3DAPP.Run();
 instance destruction        // ~D3DApp();
 ```
 
-### Render Pipeline
+### Render Pipeline and lib ImGui 
 - start with 
 
 

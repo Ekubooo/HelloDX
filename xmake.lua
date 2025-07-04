@@ -28,6 +28,7 @@ target(targetName)
     set_kind("binary")
     set_targetdir(path.join(binDir,targetName))
     add_dx_sdk_options()
+    add_deps("ImGui")
     add_headerfiles("**.h")
     add_files("**.cpp")
     -- Shader
