@@ -201,7 +201,8 @@ bool GameApp::InitResource()
         { XMFLOAT3(1.0f, -1.0f, 1.0f),  XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) }
     };
 
-    // Vertex buffer description
+    // vertex buffer ////////////////////////////////////////
+    // INIT: vertex buffer description
     D3D11_BUFFER_DESC vbd;
     ZeroMemory(&vbd, sizeof(vbd));
     vbd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -214,7 +215,7 @@ bool GameApp::InitResource()
     ZeroMemory(&InitData,sizeof(InitData));
     InitData.pSysMem = vertices;
 
-    // create vertex buffer
+    // CREATE: vertex buffer
     // {Buffer description, SubResource, Buffer}
     HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
 
@@ -235,7 +236,7 @@ bool GameApp::InitResource()
         4, 0, 3, 3, 7, 4
     }; 
 
-    // INIT: index buffer description /////////////////////
+    // INIT: index buffer description 
     D3D11_BUFFER_DESC ibd;  
     ZeroMemory(&ibd, sizeof(ibd));
     ibd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -249,7 +250,8 @@ bool GameApp::InitResource()
     //input Assemble setting for index buffer
     m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-    // INIT: constant buffer description ///////////////////
+    // constant buffer //////////////////////////////////////
+    // INIT: constant buffer description 
     D3D11_BUFFER_DESC cbd;
     ZeroMemory(&cbd, sizeof(cbd));
     cbd.Usage = D3D11_USAGE_DYNAMIC;
@@ -257,10 +259,10 @@ bool GameApp::InitResource()
     cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    // crerate constant buffer without init data
+    // CREATE: constant buffer without init data
     HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffer.GetAddressOf()));
 
-    // init constant buffer data ///////////////////////////
+    // appoint constant buffer data 
     m_cBuffer.world = XMMatrixIdentity();
     m_cBuffer.view = XMMatrixTranspose(XMMatrixLookAtLH(
         XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f),

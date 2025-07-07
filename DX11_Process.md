@@ -3,7 +3,7 @@
 - start with main() function:
 
 ```
-create GameApp instance     // D3DAPP() or GameApp()
+create GameApp instance     // D3DApp() or GameApp()
     constructor function: initiative and bind instance to global pointer.
     
 init and test:
@@ -26,7 +26,7 @@ init and test:
             RSSetViewports();       // viewport setting
     }
 
-GameApp.Run()               // D3DAPP.Run();
+GameApp::Run()               // D3DApp.Run();
     timer reset.
     while loop:
         timer.tick();
@@ -39,8 +39,58 @@ GameApp.Run()               // D3DAPP.Run();
 instance destruction        // ~D3DApp();
 ```
 
-### Render Pipeline and lib ImGui 
-- start
+
+### Render Pipeline and ImGui 
+- start with main function
+
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();         // Inheritance
+        InitMainWindow();       // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, 
+            FEATURE, DXGI, SWAP CHAIN;
+            OnResize()  
+        InitImGui();
+    GameApp::InitEffect()
+        ComPtr<ID3DBlob> blob;
+        create and compile shader file;
+        create and bind layout;
+    GameApp::InitResource()
+        load mesh;
+        // Vertex, Index, Constant Buffer: /////////////////
+        buffer description and create buffer;
+        input assemble;
+        debug test setting;
+
+D3DApp::Run()
+    timer reset.
+    while loop:
+        debug msg detect
+        timer.tick();
+        CalculateFrameStats();
+        ImGui new frame record for dx11 and win32;
+        D3DApp::GameApp::UpdateScene();     // GmaeApp/SubClass Implementation.
+            ImGui::Begin(), ImGui::End();       // ImGui component instance.
+            ImGui io event;                     // mouse and keyboard control.
+            update constant buffer data         // ImGui controller modify.
+            constance buffer mapping            // write back?
+        D3DApp::GameApp::DrawScene()        // GmaeApp/SubClass Implementation.
+            ClearRenderTargetView();
+            ClearDepthStencilView();
+            DrawIndex();                        // index for cube or model.
+            ImGui::Render();
+            ImGui_ImplDX11_RenderDrawData();    // trigger for Direct3D Draw.
+            Present();                          // swap the chain and present.
+
+~GameApp(): ~D3DApp();
 ```
 
+### Lighting, Geometry and Rasterization state
+- start with main function
+
+```
 ```
