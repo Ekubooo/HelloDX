@@ -178,4 +178,13 @@ HRESULT CreateShaderFromFile(
     LPCSTR shaderModel,
     ID3DBlob** ppBlobOut );
 
+inline DirectX::XMMATRIX XM_CALLCONV InverseTranspose(DirectX::FXMMATRIX M)
+{
+    using namespace DirectX;
+    XMMATRIX A = M;
+    A.r[3] = g_XMIdentityR3;
+
+    return XMMatrixTranspose(XMMatrixInverse(nullptr, A));
+}
+
 #endif
