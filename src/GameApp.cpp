@@ -1,6 +1,7 @@
 #include "GameApp.h"
 #include "d3dUtil.h"
 #include "DXTrace.h"
+#include "ImGuiConfig.h"
 
 using namespace DirectX;
 
@@ -46,12 +47,6 @@ void GameApp::UpdateScene(float dt)
 
     // get IO event
     ImGuiIO& io = ImGui::GetIO();
-
-    // fonts setting 
-    // const char* path = "Fonts\\kaiu.ttf";
-    const char* path = "D:\\ComputerScience\\Tools\\Fonts\\kaiu.ttf";
-    io.Fonts->AddFontFromFileTTF
-        (path, 26.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
 
     // custom window and operation
     static float tx = 0.0f, ty = 0.0f, phi = 0.0f, 

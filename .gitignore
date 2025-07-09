@@ -30,15 +30,17 @@ vsxmake2022/
 **.png
 **.jpg
 
-*.cso
-*.mbo
-*.inc
-*.ilk
-*.lib
-*.iobj
-*.ipdb
-*.pdb
-*.exp
+**.cso
+**.mbo
+**.inc
+**.ilk
+**.lib
+**.iobj
+**.ipdb
+**.pdb
+**.exp
+**.ini
+**.exe
+
 *.lastcodeanalysissucceeded
 !dxtex.exe
-*.exe
