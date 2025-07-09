@@ -8,23 +8,6 @@
 class GameApp : public D3DApp
 {
 public:
-    struct VertexPosColor
-    {
-        DirectX::XMFLOAT3 pos;
-        DirectX::XMFLOAT4 color;
-        static const D3D11_INPUT_ELEMENT_DESC inputLayout[2];
-    };  // contrast with struct of vertex shader.
-
-    struct ConstantBuffer
-    {
-        DirectX::XMMATRIX world;
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX proj;
-        DirectX::XMFLOAT4 color;
-        uint32_t useCustomColor;
-        uint32_t pads[3];
-    };
-
     struct VSConstantBuffer
     {
         DirectX::XMMATRIX world;
@@ -66,8 +49,7 @@ private:
 
     ComPtr<ID3D11VertexShader>  m_pVertexShader;        // vertex shader
     ComPtr<ID3D11PixelShader>   m_pPixelShader;         // fragment shader
-
-    // ConstantBuffer              m_cBuffer;           // for GPU constant buffer modify
+    
     VSConstantBuffer m_VSConstantBuffer;                // GPU constant buffer for vs
     PSConstantBuffer m_PSConstantBuffer;                // GPU constant buffer for ps
     
