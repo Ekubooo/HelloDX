@@ -556,6 +556,8 @@ bool D3DApp::InitImGui()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // only title enable draging
+    io.ConfigWindowsMoveFromTitleBarOnly = true;              
 
     // setting Style of Dear ImGui 
     ImGui::StyleColorsDark();

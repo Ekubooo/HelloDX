@@ -47,6 +47,12 @@ void GameApp::UpdateScene(float dt)
     // get IO event
     ImGuiIO& io = ImGui::GetIO();
 
+    // fonts setting 
+    // const char* path = "Fonts\\kaiu.ttf";
+    const char* path = "D:\\ComputerScience\\Tools\\Fonts\\kaiu.ttf";
+    io.Fonts->AddFontFromFileTTF
+        (path, 26.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
+
     // custom window and operation
     static float tx = 0.0f, ty = 0.0f, phi = 0.0f, 
         theta = 0.0f, scale = 1.0f, fov = XM_PIDIV2;
