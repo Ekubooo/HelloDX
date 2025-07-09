@@ -13,8 +13,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE prevInstance,
 #endif
 
     // GameApp theApp(hInstance, L"DirectX11 Initialization", 1280, 720);
-    // GameApp theApp(hInstance, L"A Rotating cube", 1920, 1080);
-    GameApp theApp(hInstance, L"Lighting", 1280, 720);
+    GameApp theApp(hInstance, L"Lighting geometry", 1920, 1080);
 
 
     if (!theApp.Init())
