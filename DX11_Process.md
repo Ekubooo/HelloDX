@@ -99,20 +99,21 @@ GameApp(): D3DApp()         // init
     
 GameApp::Init()
     D3DApp::Init();         // Inheritance
-        InitMainWindow();       // win32 windows setting
+        InitMainWindow();           // win32 windows setting
         InitDirect3D()      
             DEVICE, CONTEXT, DRIVER, 
             FEATURE, DXGI, SWAP CHAIN;
             OnResize()  
-        InitImGui();            // fonts setting here
+        InitImGui();                // fonts setting here
     GameApp::InitEffect()
         ComPtr<ID3DBlob> blob;
         create and compile shader file;
-        create and bind layout; // layout important
+        create and bind layout;     // layout important
     GameApp::InitResource()
-        resetMesh();            // init mesh model from geometry.h
+        resetMesh();                // init mesh model from geometry.h
+            INIT and CREATE: vertex and index buffer;
         const buffer init/set/create/bind/map/unmap;
-        init Rasterizer State DESC;  // RS cull model etc.
+        init Rasterizer State DESC; // RS cull model etc.
         input assemble;
 
 D3DApp::Run()
@@ -122,6 +123,7 @@ D3DApp::Run()
         GameApp::D3DApp::UpdateScene();     
             ImGui component(Begin/End);     // ImGui component instance.
                 ResetMesh();                    // runtime change Mesh
+                    INIT and CREATE: vertex and index buffer;
                 RSSetState();                   // runtime change RS
             ImGui Render();
             ImGui io event;                 // mouse and keyboard control.(cancel in c7)

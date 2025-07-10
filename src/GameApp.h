@@ -43,7 +43,7 @@ private:
     ComPtr<ID3D11InputLayout>   m_pVertexLayout;        // input layout
     ComPtr<ID3D11Buffer>        m_pVertexBuffer;        // vertex buffer     
     ComPtr<ID3D11Buffer>        m_pIndexBuffer;         // index buffer
-    ComPtr<ID3D11Buffer>        m_pConstantBuffers[2];   // index buffer
+    ComPtr<ID3D11Buffer>        m_pConstantBuffers[2];  // index buffer
     UINT m_IndexCount;                                  // obj's index array size
 
     ComPtr<ID3D11VertexShader>  m_pVertexShader;        // vertex shader
