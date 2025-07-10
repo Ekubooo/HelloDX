@@ -36,7 +36,6 @@ public:
 
 private:
     bool InitEffect();
-    bool InitResourcePrevious();
     bool InitResource();
     bool ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData);
 

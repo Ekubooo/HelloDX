@@ -1,4 +1,5 @@
 ## the whole process of dx based graphics engine
+
 ### overall initiative DX11
 - start with main() function:
 
@@ -103,37 +104,34 @@ GameApp::Init()
             DEVICE, CONTEXT, DRIVER, 
             FEATURE, DXGI, SWAP CHAIN;
             OnResize()  
-        InitImGui();
+        InitImGui();            // fonts setting here
     GameApp::InitEffect()
         ComPtr<ID3DBlob> blob;
         create and compile shader file;
-        create and bind layout;
+        create and bind layout; // layout important
     GameApp::InitResource()
-        load mesh;
-        // Vertex, Index, Constant Buffer: /////////////////
-        buffer description and create buffer;
+        resetMesh();            // init mesh model from geometry.h
+        const buffer init/set/create/bind/map/unmap;
+        init Rasterizer State DESC;  // RS cull model etc.
         input assemble;
-        debug test setting;
 
 D3DApp::Run()
     timer reset.
     while loop:
-        debug msg detect
-        timer.tick();
-        CalculateFrameStats();
-        ImGui new frame record for dx11 and win32;
-        D3DApp::GameApp::UpdateScene();     // GmaeApp/SubClass Implementation.
-            ImGui::Begin(), ImGui::End();       // ImGui component instance.
-            ImGui io event;                     // mouse and keyboard control.
-            update constant buffer data         // ImGui controller modify.
-            constance buffer mapping            // write back?
-        D3DApp::GameApp::DrawScene()        // GmaeApp/SubClass Implementation.
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            ImGui component(Begin/End);     // ImGui component instance.
+                ResetMesh();                    // runtime change Mesh
+                RSSetState();                   // runtime change RS
+            ImGui Render();
+            ImGui io event;                 // mouse and keyboard control.(cancel in c7)
+            update/mapping const buffer;    // ImGui controller modify.
+        GameApp::D3DApp::DrawScene()        
             ClearRenderTargetView();
             ClearDepthStencilView();
-            DrawIndex();                        // index for cube or model.
-            ImGui::Render();
-            ImGui_ImplDX11_RenderDrawData();    // trigger for Direct3D Draw.
-            Present();                          // swap the chain and present.
+            DrawIndex();                    // index for cube or model.
+            ImGui lDX11 DrawData;           // trigger for Direct3D Draw.
+            Present();                      // swap the chain and present.
 
 ~GameApp(): ~D3DApp();
 ```

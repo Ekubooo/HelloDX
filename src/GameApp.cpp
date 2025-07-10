@@ -57,6 +57,7 @@ void GameApp::UpdateScene(float dt)
             "Cylinder",
             "Cone"
         };
+
         if (ImGui::Combo("Mesh", &curr_mesh_item, mesh_strs, ARRAYSIZE(mesh_strs)))
         {
             Geometry::MeshData<VertexPosNormalColor> meshData;
@@ -69,6 +70,7 @@ void GameApp::UpdateScene(float dt)
             }
             ResetMesh(meshData);
         }
+
         bool mat_changed = false;
         ImGui::Text("Material");
         ImGui::PushID(3);
@@ -84,14 +86,18 @@ void GameApp::UpdateScene(float dt)
             "Point Light",
             "Spot Light"
         };
+
         ImGui::Text("Light");
+
         if (ImGui::Combo("Light type", &curr_light_item, light_modes, ARRAYSIZE(light_modes)))
         {
             m_PSConstantBuffer.dirLight     = (curr_light_item == 0 ? m_DirLight : DirectionalLight());
             m_PSConstantBuffer.pointLight   = (curr_light_item == 1 ? m_PointLight : PointLight());
             m_PSConstantBuffer.spotLight    = (curr_light_item == 2 ? m_SpotLight : SpotLight());
         }
+
         bool light_changed = false;
+        
         // controller id for distinguish componment
         ImGui::PushID(curr_light_item);
         if (curr_light_item == 0)
@@ -190,7 +196,7 @@ bool GameApp::InitResource()
     cbd.Usage = D3D11_USAGE_DYNAMIC;
     cbd.ByteWidth = sizeof(VSConstantBuffer);
     cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbd. CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
     // CREATE: constant buffer for vs and ps 
     HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffers[0].GetAddressOf()));
@@ -237,7 +243,7 @@ bool GameApp::InitResource()
     // using defualt direction Light
     m_PSConstantBuffer.dirLight = m_DirLight;
 
-    // observe perspective setting
+    // observe perspective position setting
     m_PSConstantBuffer.eyePos = XMFLOAT4(0.0f, 0.0f, -5.0f, 0.0f);
 
     // update constant buffer for ps
@@ -325,227 +331,6 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     // debug setting
     D3D11SetDebugObjectName(m_pVertexBuffer.Get(), "VertexBuffer");
     D3D11SetDebugObjectName(m_pIndexBuffer.Get(), "IndexBuffer");
-
-    return true;
-}
-
-
-void UpdateScenePrivious(float dt)
-{
-    // get IO event
-    ImGuiIO& io = ImGui::GetIO();
-
-    // custom window and operation
-    static float tx = 0.0f, ty = 0.0f, phi = 0.0f, 
-        theta = 0.0f, scale = 1.0f, fov = XM_PIDIV2;
-    static bool animateCube = true, customColor = false;
-    if (animateCube)
-    {
-        phi += 0.3f * dt;
-        theta += 0.37f * dt;
-        phi = XMScalarModAngle(phi);
-        theta = XMScalarModAngle(theta);
-    }
-
-    // imgui start  ///////////////////////////////
-    if (ImGui::Begin("Using ImGui"))
-    {
-        ImGui::Checkbox("animate cube", &animateCube);   // check box
-        // next component at 25 pxiel far in right side of same line
-        ImGui::SameLine(0.0f, 25.0f);   
-        if (ImGui::Button("reset params"))
-        {
-            tx = ty = phi = theta = 0.0f;
-            scale = 1.0f;
-            fov = XM_PIDIV2;
-        }
-        ImGui::SliderFloat("Scale", &scale, 0.2f, 2.0f);
-
-        ImGui::Text("phi: %.2f degrees", XMConvertToDegrees(phi));
-        ImGui::SliderFloat("##1", &phi, -XM_PI, XM_PI, "");
-        ImGui::Text("theta: %.2f degrees", XMConvertToDegrees(theta));
-        ImGui::SliderFloat("##2", &theta, -XM_PI, XM_PI, "");
-
-        ImGui::Text("Position: (%.1f, %.1f, 0.0)", tx, ty);
-
-        ImGui::Text("FOV: %.2f degrees", XMConvertToDegrees(fov));
-        ImGui::SliderFloat("##3", &fov, XM_PIDIV4, XM_PI / 3 * 2, "");
-
-        if (ImGui::Checkbox("using custom color", &customColor))
-        {
-            // m_cBuffer.useCustomColor = customColor;
-        }
-
-        if (customColor)
-        {
-            // ImGui::ColorEdit3("Color", reinterpret_cast<float*>(&m_cBuffer.color));
-        }
-    }
-
-    ImGui::End();
-    // ImGui end ///////////////////////////////////
-
-    // device control event ////////////////////////
-    if (!ImGui::IsAnyItemActive())
-    {
-        if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-        {   // mouse event moving (left click)
-            tx += io.MouseDelta.x * 0.01f;
-            ty -= io.MouseDelta.y * 0.01f;
-        }
-        
-        else if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
-        {   // mouse event rotating (right click)
-            phi -= io.MouseDelta.y * 0.01f;
-            theta -= io.MouseDelta.x * 0.01f;   
-        }
-        else if (io.MouseWheel != 0)
-        {
-            scale += 0.02 * io.MouseWheel;
-            if (scale > 2.0f) scale = 2.0f;
-            else if (scale < 0.2f) scale = 0.2f;
-        }     
-    }
-    // device control event end ////////////////////
-    
-    // update constant buffer
-    /* 
-    m_cBuffer.world = XMMatrixTranspose(
-        XMMatrixScalingFromVector(XMVectorReplicate(scale)) * 
-        XMMatrixRotationX(phi) * XMMatrixRotationY(theta) *
-        XMMatrixTranslation(tx, ty, 0.0f));
-    m_cBuffer.proj = XMMatrixTranspose
-        (XMMatrixPerspectiveFovLH(fov, AspectRatio(), 1.0f, 1000.0f));
-    */
-
-    // update constant buffer, let cube rotate!
-    D3D11_MAPPED_SUBRESOURCE mppedData;
-    // HR(m_pd3dImmediateContext->Map(m_pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mppedData));
-    // memcpy_s(mppedData.pData, sizeof(m_cBuffer), &m_cBuffer, sizeof(m_cBuffer));
-    // m_pd3dImmediateContext->Unmap(m_pConstantBuffer.Get(), 0);
-}
-
-bool GameApp::InitResourcePrevious()
-{
-    VertexPosColor vertices[] =
-    {
-        { XMFLOAT3(-1.0f, -1.0f, -1.0f),XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(1.0f, 1.0f, -1.0f),  XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, 1.0f),  XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(1.0f, 1.0f, 1.0f),   XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(1.0f, -1.0f, 1.0f),  XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) }
-    };
-
-    // vertex buffer ////////////////////////////////////////
-    // INIT: vertex buffer description
-    D3D11_BUFFER_DESC vbd;
-    ZeroMemory(&vbd, sizeof(vbd));
-    vbd.Usage = D3D11_USAGE_IMMUTABLE;
-    vbd.ByteWidth = sizeof vertices;
-    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vbd.CPUAccessFlags = 0;
-
-    // appoint init data
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData,sizeof(InitData));
-    InitData.pSysMem = vertices;
-
-    // CREATE: vertex buffer
-    // {Buffer description, SubResource, Buffer}
-    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
-
-    // index buffer /////////////////////////////////////////
-    DWORD indices[] = 
-    {
-        // front
-        0, 1, 2, 2, 3, 0,
-        // left 
-        4, 5, 1, 1, 0, 4,
-        // top 
-        1, 5, 6, 6, 2, 1,
-        // back 
-        7, 6, 5, 5, 4, 7,
-        // right 
-        3, 2, 6, 6, 7, 3,
-        // bottom 
-        4, 0, 3, 3, 7, 4
-    }; 
-
-    // INIT: index buffer description 
-    D3D11_BUFFER_DESC ibd;  
-    ZeroMemory(&ibd, sizeof(ibd));
-    ibd.Usage = D3D11_USAGE_IMMUTABLE;
-    ibd.ByteWidth = sizeof indices;
-    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    ibd.CPUAccessFlags = 0;
-
-    // CREATE: index buffer
-    InitData.pSysMem = indices;
-    HR(m_pd3dDevice->CreateBuffer(&ibd, &InitData, m_pIndexBuffer.GetAddressOf()));
-    //input Assemble setting for index buffer
-    m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-    // constant buffer //////////////////////////////////////
-    // INIT: constant buffer description 
-    D3D11_BUFFER_DESC cbd;
-    ZeroMemory(&cbd, sizeof(cbd));
-    cbd.Usage = D3D11_USAGE_DYNAMIC;
-    // cbd.ByteWidth = sizeof(ConstantBuffer);
-    cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    // CREATE: constant buffer without init data
-    /* 
-    HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffer.GetAddressOf()));
-
-    // appoint constant buffer data 
-    m_cBuffer.world = XMMatrixIdentity();
-    m_cBuffer.view = XMMatrixTranspose(XMMatrixLookAtLH(
-        XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f),
-        XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-        XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)));
-    m_cBuffer.proj = XMMatrixTranspose(
-        XMMatrixPerspectiveFovLH(XM_PIDIV2, AspectRatio(), 1.0f, 1000.0f));
-
-    m_cBuffer.color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_cBuffer.useCustomColor = false; 
-    */
-
-    // TODO: here   //?
-
-    // input Assemble //////////////////////////////////////
-    // setting vertex buffer 
-    UINT stride = sizeof(VertexPosColor);
-    UINT offset = 0;
-    m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
-
-    // setting the Primitive type and input layout
-    m_pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_pd3dImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
-
-    // bind shader to RP
-    m_pd3dImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-        // bind the constant buffer that already update to the VS (and PS!)
-    /*  
-    m_pd3dImmediateContext->VSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
-    m_pd3dImmediateContext->PSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf()); 
-    */
-
-    m_pd3dImmediateContext->PSSetShader(m_pPixelShader.Get() , nullptr, 0);
-
-    // setting debug object name 
-    D3D11SetDebugObjectName(m_pVertexLayout.Get(), "VertexPosColorLayout");
-    D3D11SetDebugObjectName(m_pVertexBuffer.Get(), "VertexBuffer");
-    D3D11SetDebugObjectName(m_pVertexShader.Get(), "Trangle_VS");
-    D3D11SetDebugObjectName(m_pPixelShader.Get(), "Trangle_PS");
-
-    D3D11SetDebugObjectName(m_pIndexBuffer.Get(), "IndexBuffer");
-    // D3D11SetDebugObjectName(m_pConstantBuffer.Get(), "ConstantBuffer");
-    D3D11SetDebugObjectName(m_pVertexShader.Get(), "Cube_VS");
-    D3D11SetDebugObjectName(m_pPixelShader.Get(), "Cube_PS");
 
     return true;
 }
