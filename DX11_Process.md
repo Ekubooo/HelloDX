@@ -1,6 +1,6 @@
 ## the whole process of dx based graphics engine
 
-### overall initiative DX11
+### 1 overall initiative DX11
 - start with main() function:
 
 ```
@@ -41,7 +41,7 @@ instance destruction        // ~D3DApp();
 ```
 
 
-### Render Pipeline and ImGui 
+### 2 Render Pipeline and ImGui 
 - start with main function
 
 ```
@@ -90,7 +90,57 @@ D3DApp::Run()
 ~GameApp(): ~D3DApp();
 ```
 
-### Lighting, Geometry and Rasterization state
+### 3 Lighting, Geometry and Rasterization state
+- start with main function
+
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();         // Inheritance
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, 
+            FEATURE, DXGI, SWAP CHAIN;
+            OnResize()  
+        InitImGui();                // fonts setting here
+    GameApp::InitEffect()
+        ComPtr<ID3DBlob> blob;
+        create and compile shader file;
+        create and bind layout;     // layout important
+    GameApp::InitResource()
+        resetMesh();                // init mesh model from geometry.h
+            INIT and CREATE: vertex and index buffer;
+        const buffer init/set/create/bind/map/unmap;
+        init Rasterizer State DESC; // RS cull model etc.
+        input assemble;
+
+D3DApp::Run()
+    timer reset.
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            ImGui component(Begin/End);     // ImGui component instance.
+                ResetMesh();                    // runtime change Mesh
+                    INIT and CREATE: vertex and index buffer;
+                RSSetState();                   // runtime change RS
+            ImGui Render();
+            ImGui io event;                 // mouse and keyboard control.(cancel in c7)
+            update/mapping const buffer;    // ImGui controller modify.
+        GameApp::D3DApp::DrawScene()        
+            ClearRenderTargetView();
+            ClearDepthStencilView();
+            DrawIndex();                    // index for cube or model.
+            ImGui lDX11 DrawData;           // trigger for Direct3D Draw.
+            Present();                      // swap the chain and present.
+
+~GameApp(): ~D3DApp();
+```
+
+
+
+### 4 
 - start with main function
 
 ```
