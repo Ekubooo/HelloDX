@@ -316,7 +316,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     D3D11_BUFFER_DESC ibd;
     ZeroMemory(&ibd, sizeof(ibd));
     ibd.Usage = D3D11_USAGE_IMMUTABLE;
-    ibd.ByteWidth = m_IndexCount * sizeof(DWORD);   // ??
+    ibd.ByteWidth = m_IndexCount * sizeof(DWORD);   // DWORD check
     ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
     ibd.CPUAccessFlags = 0;
 
