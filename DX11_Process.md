@@ -140,7 +140,7 @@ D3DApp::Run()
 
 
 
-### 4 
+### 4 Texture Loader
 - start with main function
 
 ```
