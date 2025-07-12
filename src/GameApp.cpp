@@ -168,8 +168,9 @@ void GameApp::DrawScene()
 bool GameApp::InitEffect()
 {
     ComPtr<ID3DBlob> blob;  // ??
+    // Light shader ///////////////////////////////////
     // create vertex shader
-    HR(CreateShaderFromFile(L"HLSL\\Light_VS.cso", L"HLSL\\Light_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(CreateShaderFromFile(L"HLSL\\Light\\Light_VS.cso", L"HLSL\\Light\\Light_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
     HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader.GetAddressOf()));
 
     // create and bind vertex layout
@@ -177,15 +178,36 @@ bool GameApp::InitEffect()
        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout.GetAddressOf()));
 
     // create fragment/pixel shader 
-    HR(CreateShaderFromFile(L"HLSL\\Light_PS.cso", L"HLSL\\Light_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(CreateShaderFromFile(L"HLSL\\Light\\Light_PS.cso", L"HLSL\\Light\\Light_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
     HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));   
+
+    // 2D texture shader ///////////////////////////////
+    /*  
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_VS_2D.cso", L"HLSL\\Basic\\Basic_VS_2D.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader2D.GetAddressOf()));
+
+    HR(m_pd3dDevice->CreateInputLayout(VertexPosTex::inputLayout, ARRAYSIZE(VertexPosTex::inputLayout),
+        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout2D.GetAddressOf()));
+
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_PS_2D.cso", L"HLSL\\Basic\\Basic_PS_2D.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader2D.GetAddressOf()));
+  
+    // 3D texture shader ///////////////////////////////
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_VS_3D.cso", L"HLSL\\Basic\\Basic_VS_3D.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader3D.GetAddressOf()));
     
+    HR(m_pd3dDevice->CreateInputLayout(VertexPosNormalTex::inputLayout, ARRAYSIZE(VertexPosNormalTex::inputLayout),
+        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout3D.GetAddressOf()));
+
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_PS_3D.cso", L"HLSL\\Basic\\Basic_PS_3D.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader3D.GetAddressOf()));
+    */
     return true;
 }
 
 bool GameApp::InitResource()
 {
-    // init mesh model
+    // init mesh model and setting into assemble phase
     auto meshData = Geometry::CreateBox<VertexPosNormalColor>();
     ResetMesh(meshData);
 
@@ -203,6 +225,35 @@ bool GameApp::InitResource()
     cbd.ByteWidth = sizeof(PSConstantBuffer); 
     HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffers[1].GetAddressOf()));
     
+    // Texture and sampler /////////////////////////////////////////
+    // INIT: texture 
+    HR(CreateDDSTextureFromFile(m_pd3dDevice.Get(), L"Texture\\WoodCrate.dds", nullptr, m_pWoodCreate.GetAddressOf()));
+
+    /* 
+    WCHAR strFile[40];
+    m_pFireAnime.resize(120);
+
+    for (int i = 0; i <=120 ; ++i)
+    {
+        wsprintf(strFile, L"Texture\\FireAnim\\Fire%03d.bmp", i);
+        HR(CreateWICTextureFromFile(m_pd3dDevice.Get(), strFile, nullptr, 
+             m_pFireAnime[static_cast<size_t> (i) - 1].GetAddressOf()));     
+    } 
+    */
+
+    // INIT: sampler state
+    D3D11_SAMPLER_DESC sampDesc;
+    ZeroMemory(&sampDesc, sizeof(sampDesc));
+    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sampDesc.MinLOD = 0;
+    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    HR(m_pd3dDevice->CreateSamplerState(&sampDesc, m_pSamplerState.GetAddressOf()));
+
+
     // defualt light setting ///////////////////////////////////////
     // direction light 
     m_DirLight.ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
@@ -258,7 +309,7 @@ bool GameApp::InitResource()
     rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
     rasterizerDesc.CullMode = D3D11_CULL_NONE;
     rasterizerDesc.FrontCounterClockwise = false;
-    rasterizerDesc. DepthClipEnable = true;
+    rasterizerDesc.DepthClipEnable = true;
         // line frame mode enable, normal = nullptr
     HR(m_pd3dDevice->CreateRasterizerState(&rasterizerDesc, m_pRSWireframe.GetAddressOf()));
 
@@ -266,12 +317,18 @@ bool GameApp::InitResource()
     // Primitive Topology, input layout
     m_pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_pd3dImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
-    // bind shader to RP
+
+    // bind vertex shader to RP
     m_pd3dImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-    // VS constant buffer, corresponding to const buffer in HLSL register b0
+    
+    // VS/PS const buffer, corresponding to const buffer in HLSL register b0/b1
     m_pd3dImmediateContext->VSSetConstantBuffers(0, 1, m_pConstantBuffers[0].GetAddressOf());
-    // PS constant buffer, corresponding to const buffer in HLSL register b1
     m_pd3dImmediateContext->PSSetConstantBuffers(1, 1, m_pConstantBuffers[1].GetAddressOf());
+
+    // texure loader and sampler
+    m_pd3dImmediateContext->PSSetSamplers(0, 1, m_pSamplerState.GetAddressOf());
+    m_pd3dImmediateContext->PSSetShaderResources(0, 1, m_pWoodCreate.GetAddressOf());
+    // bing pixal shader to RP
     m_pd3dImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
 
     // debug test setting //////////////////////////////////////////
