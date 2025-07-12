@@ -35,6 +35,9 @@ target(targetName)
     -- Shader
     add_rules("hlsl_shader_complier")
     add_headerfiles("HLSL/**.hlsl|HLSL/**.hlsli")
+    add_headerfiles("HLSL/**/**.hlsl|HLSL/**/**.hlsli")
     add_files("HLSL/**.hlsl|HLSL/**.hlsli")
+    add_files("HLSL/**/**.hlsl|HLSL/**/**.hlsli")
+
 target_end()
 -- ////////////////
