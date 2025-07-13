@@ -39,7 +39,11 @@ public:
 private:
     bool InitEffect();
     bool InitResource();
-    bool ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData);
+
+    template<class VertexType>
+    bool ResetMesh(const Geometry::MeshData<VertexType> &meshData);
+    // bool ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData);
+
 
 private:
     ComPtr<ID3D11InputLayout>   m_pVertexLayout;        // input layout
@@ -48,7 +52,7 @@ private:
 
     ComPtr<ID3D11Buffer>        m_pVertexBuffer;        // vertex buffer     
     ComPtr<ID3D11Buffer>        m_pIndexBuffer;         // index buffer
-    ComPtr<ID3D11Buffer>        m_pConstantBuffers[2];  // index buffer
+    ComPtr<ID3D11Buffer>        m_pConstantBuffers[2];  // const buffer
     UINT m_IndexCount;                                  // obj's index array size
 
     // int m_CurrFrame;                                    // frame number of flame animation

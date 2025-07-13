@@ -60,13 +60,13 @@ void GameApp::UpdateScene(float dt)
 
         if (ImGui::Combo("Mesh", &curr_mesh_item, mesh_strs, ARRAYSIZE(mesh_strs)))
         {
-            Geometry::MeshData<VertexPosNormalColor> meshData;
+            Geometry::MeshData<VertexPosNormalTex> meshData;
             switch (curr_mesh_item)
             {
-            case 0: meshData = Geometry::CreateBox<VertexPosNormalColor>();         break;
-            case 1: meshData = Geometry::CreateSphere<VertexPosNormalColor>();      break;
-            case 2: meshData = Geometry::CreateCylinder<VertexPosNormalColor>();    break;
-            case 3: meshData = Geometry::CreateCone<VertexPosNormalColor>();        break; 
+            case 0: meshData = Geometry::CreateBox<VertexPosNormalTex>();         break;
+            case 1: meshData = Geometry::CreateSphere<VertexPosNormalTex>();      break;
+            case 2: meshData = Geometry::CreateCylinder<VertexPosNormalTex>();    break;
+            case 3: meshData = Geometry::CreateCone<VertexPosNormalTex>();        break; 
             }
             ResetMesh(meshData);
         }
@@ -152,7 +152,7 @@ void GameApp::DrawScene()
     assert(m_pd3dImmediateContext);
     assert(m_pSwapChain);
     m_pd3dImmediateContext->ClearRenderTargetView
-        (m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&Colors::Black));
+        (m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&Colors::SkyBlue));
     m_pd3dImmediateContext->ClearDepthStencilView
         (m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -179,6 +179,19 @@ bool GameApp::InitEffect()
 
     // create fragment/pixel shader 
     HR(CreateShaderFromFile(L"HLSL\\Light\\Light_PS.cso", L"HLSL\\Light\\Light_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));   
+    
+    // Texture shader test ////////////////////////////
+    // create vertex shader
+    HR(CreateShaderFromFile(L"HLSL\\Light\\LightTex_VS.cso", L"HLSL\\Light\\LightTex_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader.GetAddressOf()));
+
+    // create and bind vertex layout
+    HR(m_pd3dDevice->CreateInputLayout(VertexPosNormalTex::inputLayout, ARRAYSIZE(VertexPosNormalTex::inputLayout), 
+       blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout.GetAddressOf()));
+
+    // create fragment/pixel shader 
+    HR(CreateShaderFromFile(L"HLSL\\Light\\LightTex_PS.cso", L"HLSL\\Light\\LightTex_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
     HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));   
 
     // 2D texture shader ///////////////////////////////
@@ -208,7 +221,7 @@ bool GameApp::InitEffect()
 bool GameApp::InitResource()
 {
     // init mesh model and setting into assemble phase
-    auto meshData = Geometry::CreateBox<VertexPosNormalColor>();
+    auto meshData = Geometry::CreateBox<VertexPosNormalTex>();  // no template
     ResetMesh(meshData);
 
     // constant buffer setting /////////////////////////////////////
@@ -228,20 +241,9 @@ bool GameApp::InitResource()
     // Texture and sampler /////////////////////////////////////////
     // INIT: texture 
     HR(CreateDDSTextureFromFile(m_pd3dDevice.Get(), L"Texture\\WoodCrate.dds", nullptr, m_pWoodCreate.GetAddressOf()));
+    // HR(CreateWICTextureFromFile(m_pd3dDevice.Get(), L"Texture\\tex.png", nullptr, m_pTexPicture.GetAddressOf()));
 
-    /* 
-    WCHAR strFile[40];
-    m_pFireAnime.resize(120);
-
-    for (int i = 0; i <=120 ; ++i)
-    {
-        wsprintf(strFile, L"Texture\\FireAnim\\Fire%03d.bmp", i);
-        HR(CreateWICTextureFromFile(m_pd3dDevice.Get(), strFile, nullptr, 
-             m_pFireAnime[static_cast<size_t> (i) - 1].GetAddressOf()));     
-    } 
-    */
-
-    // INIT: sampler state
+    // INIT: tex sampler state
     D3D11_SAMPLER_DESC sampDesc;
     ZeroMemory(&sampDesc, sizeof(sampDesc));
     sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -335,13 +337,17 @@ bool GameApp::InitResource()
     D3D11SetDebugObjectName(m_pVertexLayout.Get(), "VertexPosNormalTexLayout");
     D3D11SetDebugObjectName(m_pConstantBuffers[0].Get(), "VSConstantBuffer");
     D3D11SetDebugObjectName(m_pConstantBuffers[1].Get(), "PSConstantBuffer");
+
     D3D11SetDebugObjectName(m_pVertexShader.Get(), "Light_VS");
     D3D11SetDebugObjectName(m_pPixelShader.Get(), "Light_PS");
+
+    D3D11SetDebugObjectName(m_pSamplerState.Get(), "SSLinearWrap");
 
     return true;
 }
 
-bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData)
+template<class VertexType>
+bool GameApp::ResetMesh(const Geometry::MeshData<VertexType> &meshData)
 {
     // release old data
     m_pVertexBuffer.Reset();
@@ -352,7 +358,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     D3D11_BUFFER_DESC vbd;
     ZeroMemory(&vbd, sizeof(vbd));
     vbd.Usage = D3D11_USAGE_IMMUTABLE;
-    vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexPosNormalColor);
+    vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexType);
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vbd.CPUAccessFlags = 0;
 
@@ -360,10 +366,10 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     D3D11_SUBRESOURCE_DATA InitData;
     ZeroMemory(&InitData, sizeof(InitData));
     InitData.pSysMem = meshData.vertexVec.data();
-    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
+    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.ReleaseAndGetAddressOf()));
 
     // input Assemble 
-    UINT stride = sizeof(VertexPosNormalColor);
+    UINT stride = sizeof(VertexType);
     UINT offset = 0;
     m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 
@@ -382,8 +388,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     HR(m_pd3dDevice->CreateBuffer(&ibd, &InitData, m_pIndexBuffer.GetAddressOf()));
     
     // input Assemble 
-    m_pd3dImmediateContext->IASetIndexBuffer
-        (m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+    m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
     // debug setting
     D3D11SetDebugObjectName(m_pVertexBuffer.Get(), "VertexBuffer");

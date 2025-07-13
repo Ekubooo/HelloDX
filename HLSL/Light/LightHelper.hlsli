@@ -45,7 +45,7 @@ struct Material
 {
     float4 ambient;
     float4 diffuse;
-    float4 specular; // w = SpecPower
+    float4 specular; // w = Spec Power
     float4 reflect;
 };
 
