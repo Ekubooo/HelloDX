@@ -25,6 +25,8 @@ public:
         DirectX::XMFLOAT4 eyePos;
     };
 
+    // enum class ShowMode {WoodCreate, FireAnime};
+
 public:
     GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight);
     ~GameApp();
@@ -37,24 +39,43 @@ public:
 private:
     bool InitEffect();
     bool InitResource();
-    bool ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData);
+
+    template<class VertexType>
+    bool ResetMesh(const Geometry::MeshData<VertexType> &meshData);
+    // bool ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData);
+
 
 private:
     ComPtr<ID3D11InputLayout>   m_pVertexLayout;        // input layout
+    ComPtr<ID3D11InputLayout>   m_pVertexLayout2D;        
+    ComPtr<ID3D11InputLayout>   m_pVertexLayout3D;
+
     ComPtr<ID3D11Buffer>        m_pVertexBuffer;        // vertex buffer     
     ComPtr<ID3D11Buffer>        m_pIndexBuffer;         // index buffer
-    ComPtr<ID3D11Buffer>        m_pConstantBuffers[2];  // index buffer
+    ComPtr<ID3D11Buffer>        m_pConstantBuffers[2];  // const buffer
     UINT m_IndexCount;                                  // obj's index array size
 
+    // int m_CurrFrame;                                    // frame number of flame animation
+    // ShowMode m_CurrMode;                                // current mode of showen 
+    
+    ComPtr<ID3D11ShaderResourceView> m_pWoodCreate;     // wood box texture
+    // std::vector<ComPtr<ID3D11ShaderResourceView>> m_pFireAnime; 
+                                                        // fire texture view
+    ComPtr<ID3D11SamplerState> m_pSamplerState;         // sampler state
+    
     ComPtr<ID3D11VertexShader>  m_pVertexShader;        // vertex shader
     ComPtr<ID3D11PixelShader>   m_pPixelShader;         // fragment shader
+    ComPtr<ID3D11VertexShader>  m_pVertexShader2D;      
+    ComPtr<ID3D11PixelShader>   m_pPixelShader2D;       
+    ComPtr<ID3D11VertexShader>  m_pVertexShader3D;      
+    ComPtr<ID3D11PixelShader>   m_pPixelShader3D;       
     
     VSConstantBuffer m_VSConstantBuffer;                // GPU constant buffer for vs
     PSConstantBuffer m_PSConstantBuffer;                // GPU constant buffer for ps
     
-    DirectionalLight m_DirLight;    // defualt direction light
-    PointLight m_PointLight;        // defualt point light 
-    SpotLight m_SpotLight;          // defualt spot light
+    DirectionalLight m_DirLight;                        // defualt direction light
+    PointLight m_PointLight;                            // defualt point light 
+    SpotLight m_SpotLight;                              // defualt spot light
 
     ComPtr<ID3D11RasterizerState> m_pRSWireframe;       // RS state: line framework only
     bool m_IsWireframeMode;

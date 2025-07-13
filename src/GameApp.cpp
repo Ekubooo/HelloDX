@@ -41,14 +41,48 @@ void GameApp::OnResize()
 
 void GameApp::UpdateScene(float dt)
 {
-    static float phi = 0.0f, theta = 0.0f;
-    phi += 0.3f * dt, theta += 0.37f * dt;
-    XMMATRIX W = XMMatrixRotationX(phi) * XMMatrixRotationY(theta);
-    m_VSConstantBuffer.world = XMMatrixTranspose(W);
-    m_VSConstantBuffer.worldInvTranspose = XMMatrixTranspose(InverseTranspose(W));
+    // option window 
+    ImGui::ShowDemoWindow();
 
-    if (ImGui::Begin("Lighting"))
+    // io event init 
+    ImGuiIO& io = ImGui::GetIO();
+
+    static float phi = 0.0f, theta = 0.0f;
+    static float tx = 0.0f, ty = 0.0f, scale = 1.0f, fov = XM_PIDIV2;
+    static bool animateCube = true;
+    static bool customColor = false;
+
+    if (animateCube)
     {
+        phi += 0.3f * dt, theta += 0.37f * dt;
+        phi = XMScalarModAngle(phi);
+        theta = XMScalarModAngle(theta);
+    }
+
+    if (ImGui::Begin("SETTINGS"))
+    {
+        ImGui::Checkbox("Rorate ?", &animateCube);
+        ImGui::SameLine(0.0f, 25.0f);
+
+        if (ImGui::Button("Reset"))
+        {
+            tx = ty = phi = theta = 0.0f;
+            scale = 1.0f;
+            fov = XM_PIDIV2;
+        }
+
+        ImGui::SliderFloat("Scale", &scale, 0.2f, 2.0f);
+
+        ImGui::Text("Phi  : %.2f degree", XMConvertToDegrees(phi));
+        ImGui::SliderFloat("##1", &phi, -XM_PI, XM_PI, "");
+        ImGui::Text("Theta: %.2f degree", XMConvertToDegrees(theta));
+        ImGui::SliderFloat("##1", &theta, -XM_PI, XM_PI, "");
+
+        ImGui::Text("POSITION: (%.1f, %.1f, 0.0)", tx, ty);
+        ImGui::Text("FOV: %.2f degree", XMConvertToDegrees(fov));
+        ImGui::SliderFloat("##3", &fov, XM_PIDIV4, XM_PI / 3 * 2, "");
+
+        ImGui::Text("Model select ");
         static int curr_mesh_item = 0;
         const char* mesh_strs[] = 
         {
@@ -60,13 +94,13 @@ void GameApp::UpdateScene(float dt)
 
         if (ImGui::Combo("Mesh", &curr_mesh_item, mesh_strs, ARRAYSIZE(mesh_strs)))
         {
-            Geometry::MeshData<VertexPosNormalColor> meshData;
+            Geometry::MeshData<VertexPosNormalTex> meshData;
             switch (curr_mesh_item)
             {
-            case 0: meshData = Geometry::CreateBox<VertexPosNormalColor>();         break;
-            case 1: meshData = Geometry::CreateSphere<VertexPosNormalColor>();      break;
-            case 2: meshData = Geometry::CreateCylinder<VertexPosNormalColor>();    break;
-            case 3: meshData = Geometry::CreateCone<VertexPosNormalColor>();        break; 
+            case 0: meshData = Geometry::CreateBox<VertexPosNormalTex>();         break;
+            case 1: meshData = Geometry::CreateSphere<VertexPosNormalTex>();      break;
+            case 2: meshData = Geometry::CreateCylinder<VertexPosNormalTex>();    break;
+            case 3: meshData = Geometry::CreateCone<VertexPosNormalTex>();        break; 
             }
             ResetMesh(meshData);
         }
@@ -131,9 +165,40 @@ void GameApp::UpdateScene(float dt)
             m_pd3dImmediateContext->RSSetState(m_IsWireframeMode ? m_pRSWireframe.Get() : nullptr);
         }
         ImGui::End();
-        ImGui::Render();
         
-        // update constant buffer, let cube rotate!
+        // io event init 
+
+        if (!ImGui::IsAnyItemActive())
+        {
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+            {   // mouse left click drag move
+                tx += io.MouseDelta.x * 0.01f;
+                ty -= io.MouseDelta.y * 0.01f;
+            }
+            else if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+            {   // mouse right click drag rotate
+                phi -= io.MouseDelta.y * 0.01f;
+                theta -= io.MouseDelta.x * 0.01f;
+                phi = XMScalarModAngle(phi);
+                theta = XMScalarModAngle(theta);
+            }
+            else if (io.MouseWheel != 0.0f)
+            {   // nouse wheel scaling
+                scale += 0.02f * io.MouseWheel;
+                if (scale > 2.0f) scale = 2.0f;
+                else if (scale < 0.2f) scale = 0.2f;
+            }
+        }
+
+        XMMATRIX W = XMMatrixRotationX(phi) * XMMatrixRotationY(theta) *
+            XMMatrixScalingFromVector(XMVectorReplicate(scale)) * 
+            XMMatrixTranslation(tx, ty, 0.0f);
+
+        m_VSConstantBuffer.world = XMMatrixTranspose(W);
+        m_VSConstantBuffer.proj = XMMatrixTranspose(XMMatrixPerspectiveFovLH(fov, AspectRatio(), 1.0f, 1000.0f));
+        m_VSConstantBuffer.worldInvTranspose = XMMatrixTranspose(InverseTranspose(W));
+
+        // update constant buffer
         D3D11_MAPPED_SUBRESOURCE mappedData;
         HR(m_pd3dImmediateContext->Map(m_pConstantBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData));
         memcpy_s(mappedData.pData, sizeof(VSConstantBuffer), &m_VSConstantBuffer, sizeof(VSConstantBuffer));
@@ -152,12 +217,13 @@ void GameApp::DrawScene()
     assert(m_pd3dImmediateContext);
     assert(m_pSwapChain);
     m_pd3dImmediateContext->ClearRenderTargetView
-        (m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&Colors::Black));
+        (m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&Colors::SkyBlue));
     m_pd3dImmediateContext->ClearDepthStencilView
         (m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_pd3dImmediateContext->DrawIndexed(m_IndexCount, 0, 0);
 
+    ImGui::Render();
     // imgui will trigger Direct3D Draw.
     // need to bind backup_buffer on RP before here.
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -168,8 +234,9 @@ void GameApp::DrawScene()
 bool GameApp::InitEffect()
 {
     ComPtr<ID3DBlob> blob;  // ??
+    // Light shader ///////////////////////////////////
     // create vertex shader
-    HR(CreateShaderFromFile(L"HLSL\\Light_VS.cso", L"HLSL\\Light_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(CreateShaderFromFile(L"HLSL\\Light\\Light_VS.cso", L"HLSL\\Light\\Light_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
     HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader.GetAddressOf()));
 
     // create and bind vertex layout
@@ -177,16 +244,50 @@ bool GameApp::InitEffect()
        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout.GetAddressOf()));
 
     // create fragment/pixel shader 
-    HR(CreateShaderFromFile(L"HLSL\\Light_PS.cso", L"HLSL\\Light_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(CreateShaderFromFile(L"HLSL\\Light\\Light_PS.cso", L"HLSL\\Light\\Light_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
     HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));   
     
+    // Texture shader test ////////////////////////////
+    // create vertex shader
+    HR(CreateShaderFromFile(L"HLSL\\Light\\LightTex_VS.cso", L"HLSL\\Light\\LightTex_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader.GetAddressOf()));
+
+    // create and bind vertex layout
+    HR(m_pd3dDevice->CreateInputLayout(VertexPosNormalTex::inputLayout, ARRAYSIZE(VertexPosNormalTex::inputLayout), 
+       blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout.GetAddressOf()));
+
+    // create fragment/pixel shader 
+    HR(CreateShaderFromFile(L"HLSL\\Light\\LightTex_PS.cso", L"HLSL\\Light\\LightTex_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));   
+
+    // 2D texture shader ///////////////////////////////
+    /*  
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_VS_2D.cso", L"HLSL\\Basic\\Basic_VS_2D.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader2D.GetAddressOf()));
+
+    HR(m_pd3dDevice->CreateInputLayout(VertexPosTex::inputLayout, ARRAYSIZE(VertexPosTex::inputLayout),
+        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout2D.GetAddressOf()));
+
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_PS_2D.cso", L"HLSL\\Basic\\Basic_PS_2D.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader2D.GetAddressOf()));
+  
+    // 3D texture shader ///////////////////////////////
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_VS_3D.cso", L"HLSL\\Basic\\Basic_VS_3D.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader3D.GetAddressOf()));
+    
+    HR(m_pd3dDevice->CreateInputLayout(VertexPosNormalTex::inputLayout, ARRAYSIZE(VertexPosNormalTex::inputLayout),
+        blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout3D.GetAddressOf()));
+
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_PS_3D.cso", L"HLSL\\Basic\\Basic_PS_3D.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader3D.GetAddressOf()));
+    */
     return true;
 }
 
 bool GameApp::InitResource()
 {
-    // init mesh model
-    auto meshData = Geometry::CreateBox<VertexPosNormalColor>();
+    // init mesh model and setting into assemble phase
+    auto meshData = Geometry::CreateBox<VertexPosNormalTex>();  // no template
     ResetMesh(meshData);
 
     // constant buffer setting /////////////////////////////////////
@@ -203,6 +304,24 @@ bool GameApp::InitResource()
     cbd.ByteWidth = sizeof(PSConstantBuffer); 
     HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffers[1].GetAddressOf()));
     
+    // Texture and sampler /////////////////////////////////////////
+    // INIT: texture 
+    HR(CreateDDSTextureFromFile(m_pd3dDevice.Get(), L"Texture\\WoodCrate.dds", nullptr, m_pWoodCreate.GetAddressOf()));
+    // HR(CreateWICTextureFromFile(m_pd3dDevice.Get(), L"Texture\\tex.png", nullptr, m_pTexPicture.GetAddressOf()));
+
+    // INIT: tex sampler state
+    D3D11_SAMPLER_DESC sampDesc;
+    ZeroMemory(&sampDesc, sizeof(sampDesc));
+    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sampDesc.MinLOD = 0;
+    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    HR(m_pd3dDevice->CreateSamplerState(&sampDesc, m_pSamplerState.GetAddressOf()));
+
+
     // defualt light setting ///////////////////////////////////////
     // direction light 
     m_DirLight.ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
@@ -258,7 +377,7 @@ bool GameApp::InitResource()
     rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
     rasterizerDesc.CullMode = D3D11_CULL_NONE;
     rasterizerDesc.FrontCounterClockwise = false;
-    rasterizerDesc. DepthClipEnable = true;
+    rasterizerDesc.DepthClipEnable = true;
         // line frame mode enable, normal = nullptr
     HR(m_pd3dDevice->CreateRasterizerState(&rasterizerDesc, m_pRSWireframe.GetAddressOf()));
 
@@ -266,25 +385,35 @@ bool GameApp::InitResource()
     // Primitive Topology, input layout
     m_pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_pd3dImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
-    // bind shader to RP
+
+    // bind vertex shader to RP
     m_pd3dImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-    // VS constant buffer, corresponding to const buffer in HLSL register b0
+    
+    // VS/PS const buffer, corresponding to const buffer in HLSL register b0/b1
     m_pd3dImmediateContext->VSSetConstantBuffers(0, 1, m_pConstantBuffers[0].GetAddressOf());
-    // PS constant buffer, corresponding to const buffer in HLSL register b1
     m_pd3dImmediateContext->PSSetConstantBuffers(1, 1, m_pConstantBuffers[1].GetAddressOf());
+
+    // texure loader and sampler
+    m_pd3dImmediateContext->PSSetSamplers(0, 1, m_pSamplerState.GetAddressOf());
+    m_pd3dImmediateContext->PSSetShaderResources(0, 1, m_pWoodCreate.GetAddressOf());
+    // bing pixal shader to RP
     m_pd3dImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
 
     // debug test setting //////////////////////////////////////////
     D3D11SetDebugObjectName(m_pVertexLayout.Get(), "VertexPosNormalTexLayout");
     D3D11SetDebugObjectName(m_pConstantBuffers[0].Get(), "VSConstantBuffer");
     D3D11SetDebugObjectName(m_pConstantBuffers[1].Get(), "PSConstantBuffer");
+
     D3D11SetDebugObjectName(m_pVertexShader.Get(), "Light_VS");
     D3D11SetDebugObjectName(m_pPixelShader.Get(), "Light_PS");
+
+    D3D11SetDebugObjectName(m_pSamplerState.Get(), "SSLinearWrap");
 
     return true;
 }
 
-bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData)
+template<class VertexType>
+bool GameApp::ResetMesh(const Geometry::MeshData<VertexType> &meshData)
 {
     // release old data
     m_pVertexBuffer.Reset();
@@ -295,7 +424,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     D3D11_BUFFER_DESC vbd;
     ZeroMemory(&vbd, sizeof(vbd));
     vbd.Usage = D3D11_USAGE_IMMUTABLE;
-    vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexPosNormalColor);
+    vbd.ByteWidth = (UINT)meshData.vertexVec.size() * sizeof(VertexType);
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vbd.CPUAccessFlags = 0;
 
@@ -303,10 +432,10 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     D3D11_SUBRESOURCE_DATA InitData;
     ZeroMemory(&InitData, sizeof(InitData));
     InitData.pSysMem = meshData.vertexVec.data();
-    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
+    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.ReleaseAndGetAddressOf()));
 
     // input Assemble 
-    UINT stride = sizeof(VertexPosNormalColor);
+    UINT stride = sizeof(VertexType);
     UINT offset = 0;
     m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 
@@ -325,8 +454,7 @@ bool GameApp::ResetMesh(const Geometry::MeshData<VertexPosNormalColor> &meshData
     HR(m_pd3dDevice->CreateBuffer(&ibd, &InitData, m_pIndexBuffer.GetAddressOf()));
     
     // input Assemble 
-    m_pd3dImmediateContext->IASetIndexBuffer
-        (m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+    m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
     // debug setting
     D3D11SetDebugObjectName(m_pVertexBuffer.Get(), "VertexBuffer");

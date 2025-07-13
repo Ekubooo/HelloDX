@@ -103,7 +103,7 @@ GameApp::Init()
         InitDirect3D()      
             DEVICE, CONTEXT, DRIVER, 
             FEATURE, DXGI, SWAP CHAIN;
-            OnResize()  
+            OnResize();
         InitImGui();                // fonts setting here
     GameApp::InitEffect()
         ComPtr<ID3DBlob> blob;
@@ -133,15 +133,18 @@ D3DApp::Run()
             ClearDepthStencilView();
             DrawIndex();                    // index for cube or model.
             ImGui lDX11 DrawData;           // trigger for Direct3D Draw.
-            Present();                      // swap the chain and present.
+            Present();                      // Swap Chain flip and present.
+    end loop;
 
 ~GameApp(): ~D3DApp();
 ```
 
 
 
-### 4 
+### 4 Texture Loader
 - start with main function
+- extra content: frame animation demo
+- extra content: multiple light source demo
 
 ```
 GameApp(): D3DApp()         // init 
@@ -151,23 +154,24 @@ GameApp::Init()
     D3DApp::Init();         // Inheritance
         InitMainWindow();           // win32 windows setting
         InitDirect3D()      
-            DEVICE, CONTEXT, DRIVER, 
-            FEATURE, DXGI, SWAP CHAIN;
-            OnResize()  
+            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
+            OnResize();             // resize window and stuff
         InitImGui();                // fonts setting here
     GameApp::InitEffect()
         ComPtr<ID3DBlob> blob;
         create and compile shader file;
-        create and bind layout;     // layout important
+        create and bind layout;     // layout is important
     GameApp::InitResource()
         resetMesh();                // init mesh model from geometry.h
             INIT and CREATE: vertex and index buffer;
         const buffer init/set/create/bind/map/unmap;
-        init Rasterizer State DESC; // RS cull model etc.
+        INIT Texture and Sampler;
+        INIT Rasterizer State;      // RS cull model etc.
         input assemble;
+end Init();
 
 D3DApp::Run()
-    timer reset.
+    timer reset;
     while loop:
         debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
         GameApp::D3DApp::UpdateScene();     
@@ -179,11 +183,12 @@ D3DApp::Run()
             ImGui io event;                 // mouse and keyboard control.(cancel in c7)
             update/mapping const buffer;    // ImGui controller modify.
         GameApp::D3DApp::DrawScene()        
-            ClearRenderTargetView();
-            ClearDepthStencilView();
-            DrawIndex();                    // index for cube or model.
-            ImGui lDX11 DrawData;           // trigger for Direct3D Draw.
-            Present();                      // swap the chain and present.
+            ClearView();                    // render target view, depgh and stencil
+            DrawIndex();                    // index data of model.
+            ImGui lDX11 DrawData;           // trigger of Direct3D Draw.
+            Present();                      // Swap Chain flip and present.
+    end loop;
+end run();
 
 ~GameApp(): ~D3DApp();
 ```
