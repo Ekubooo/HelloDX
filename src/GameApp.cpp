@@ -41,14 +41,48 @@ void GameApp::OnResize()
 
 void GameApp::UpdateScene(float dt)
 {
-    static float phi = 0.0f, theta = 0.0f;
-    phi += 0.3f * dt, theta += 0.37f * dt;
-    XMMATRIX W = XMMatrixRotationX(phi) * XMMatrixRotationY(theta);
-    m_VSConstantBuffer.world = XMMatrixTranspose(W);
-    m_VSConstantBuffer.worldInvTranspose = XMMatrixTranspose(InverseTranspose(W));
+    // option window 
+    ImGui::ShowDemoWindow();
 
-    if (ImGui::Begin("Lighting"))
+    // io event init 
+    ImGuiIO& io = ImGui::GetIO();
+
+    static float phi = 0.0f, theta = 0.0f;
+    static float tx = 0.0f, ty = 0.0f, scale = 1.0f, fov = XM_PIDIV2;
+    static bool animateCube = true;
+    static bool customColor = false;
+
+    if (animateCube)
     {
+        phi += 0.3f * dt, theta += 0.37f * dt;
+        phi = XMScalarModAngle(phi);
+        theta = XMScalarModAngle(theta);
+    }
+
+    if (ImGui::Begin("SETTINGS"))
+    {
+        ImGui::Checkbox("Rorate ?", &animateCube);
+        ImGui::SameLine(0.0f, 25.0f);
+
+        if (ImGui::Button("Reset"))
+        {
+            tx = ty = phi = theta = 0.0f;
+            scale = 1.0f;
+            fov = XM_PIDIV2;
+        }
+
+        ImGui::SliderFloat("Scale", &scale, 0.2f, 2.0f);
+
+        ImGui::Text("Phi  : %.2f degree", XMConvertToDegrees(phi));
+        ImGui::SliderFloat("##1", &phi, -XM_PI, XM_PI, "");
+        ImGui::Text("Theta: %.2f degree", XMConvertToDegrees(theta));
+        ImGui::SliderFloat("##1", &theta, -XM_PI, XM_PI, "");
+
+        ImGui::Text("POSITION: (%.1f, %.1f, 0.0)", tx, ty);
+        ImGui::Text("FOV: %.2f degree", XMConvertToDegrees(fov));
+        ImGui::SliderFloat("##3", &fov, XM_PIDIV4, XM_PI / 3 * 2, "");
+
+        ImGui::Text("Model select ");
         static int curr_mesh_item = 0;
         const char* mesh_strs[] = 
         {
@@ -131,9 +165,40 @@ void GameApp::UpdateScene(float dt)
             m_pd3dImmediateContext->RSSetState(m_IsWireframeMode ? m_pRSWireframe.Get() : nullptr);
         }
         ImGui::End();
-        ImGui::Render();
         
-        // update constant buffer, let cube rotate!
+        // io event init 
+
+        if (!ImGui::IsAnyItemActive())
+        {
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+            {   // mouse left click drag move
+                tx += io.MouseDelta.x * 0.01f;
+                ty -= io.MouseDelta.y * 0.01f;
+            }
+            else if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+            {   // mouse right click drag rotate
+                phi -= io.MouseDelta.y * 0.01f;
+                theta -= io.MouseDelta.x * 0.01f;
+                phi = XMScalarModAngle(phi);
+                theta = XMScalarModAngle(theta);
+            }
+            else if (io.MouseWheel != 0.0f)
+            {   // nouse wheel scaling
+                scale += 0.02f * io.MouseWheel;
+                if (scale > 2.0f) scale = 2.0f;
+                else if (scale < 0.2f) scale = 0.2f;
+            }
+        }
+
+        XMMATRIX W = XMMatrixRotationX(phi) * XMMatrixRotationY(theta) *
+            XMMatrixScalingFromVector(XMVectorReplicate(scale)) * 
+            XMMatrixTranslation(tx, ty, 0.0f);
+
+        m_VSConstantBuffer.world = XMMatrixTranspose(W);
+        m_VSConstantBuffer.proj = XMMatrixTranspose(XMMatrixPerspectiveFovLH(fov, AspectRatio(), 1.0f, 1000.0f));
+        m_VSConstantBuffer.worldInvTranspose = XMMatrixTranspose(InverseTranspose(W));
+
+        // update constant buffer
         D3D11_MAPPED_SUBRESOURCE mappedData;
         HR(m_pd3dImmediateContext->Map(m_pConstantBuffers[0].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData));
         memcpy_s(mappedData.pData, sizeof(VSConstantBuffer), &m_VSConstantBuffer, sizeof(VSConstantBuffer));
@@ -158,6 +223,7 @@ void GameApp::DrawScene()
 
     m_pd3dImmediateContext->DrawIndexed(m_IndexCount, 0, 0);
 
+    ImGui::Render();
     // imgui will trigger Direct3D Draw.
     // need to bind backup_buffer on RP before here.
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
