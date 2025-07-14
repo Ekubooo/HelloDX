@@ -31,7 +31,11 @@ target(targetName)
     add_dx_sdk_options()
     add_deps("ImGui")
     add_headerfiles("**.h")
-    add_files("**.cpp")
+    add_files("**.cpp")    
+    add_includedirs("src/Component")
+    add_includedirs("src/Framework")
+    add_includedirs("src/")
+
     -- Shader
     add_rules("hlsl_shader_complier")
     add_headerfiles("HLSL/**.hlsl|HLSL/**.hlsli")
