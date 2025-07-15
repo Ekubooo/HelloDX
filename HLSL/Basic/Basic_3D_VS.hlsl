@@ -1,6 +1,6 @@
 #include "Basic.hlsli"
 
-// vertex shader (3D)
+// 顶点着色器(3D)
 VertexPosHWNormalTex VS(VertexPosNormalTex vIn)
 {
     VertexPosHWNormalTex vOut;
