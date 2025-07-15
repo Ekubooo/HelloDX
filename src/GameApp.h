@@ -1,31 +1,66 @@
 #ifndef GAMEAPP_H
 #define GAMEAPP_H
 
-#include "d3dApp.h"
-#include "LightHelper.h"
-#include "Geometry.h"
+#include <d3dApp.h>
+#include <LightHelper.h>
+#include <Geometry.h>
+#include <Camera.h>
 
 class GameApp : public D3DApp
 {
 public:
-    struct VSConstantBuffer
+    struct CBChangeEveryDrawing
     {
         DirectX::XMMATRIX world;
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX proj;
         DirectX::XMMATRIX worldInvTranspose;
     };
-
-    struct PSConstantBuffer
+    struct CBChangeEveryFrame
     {
-        DirectionalLight dirLight;
-        PointLight pointLight;
-        SpotLight spotLight;
-        Material material;  
+        DirectX::XMMATRIX view;
         DirectX::XMFLOAT4 eyePos;
     };
+    struct CBChangeOnResize
+    {
+        DirectX::XMMATRIX proj;
+    };
+    struct CBChangeRarely
+    {
+        DirectionalLight _dirLight[10];
+        PointLight _pointLight[10];
+        SpotLight _spotLight[10];
+        Material _material;
+        int numDirLight;
+        int numPointLight;
+        int numSpotLight;
+        float pad;
+    };
+    
+    class GameObject
+    { 
+    public:
+        GameObject();
 
-    // enum class ShowMode {WoodCreate, FireAnime};
+        // get transform
+        Transform& GetTransform();
+        const Transform& GetTransform() const;
+
+        template<class VertexType, class IndexType>
+        void SetBuffer(ID3D11Device * device, const Geometry::MeshData<VertexType, IndexType>& meshData);
+        void SetTexture(ID3D11ShaderResourceView * texture);
+        void Draw(ID3D11DeviceContext * deviceContext);
+        void SetDebugObjectName(const std::string& name);
+
+    private:
+        Transform m_Transform;
+        ComPtr<ID3D11ShaderResourceView> m_pTexture;
+        ComPtr<ID3D11Buffer> m_pVertexBuffer; 
+        ComPtr<ID3D11Buffer> m_pIndexBuffer;
+        UINT m_VertexStride;
+        UINT m_IndexCount;          // obj's index array size
+    
+    };
+    
+    enum class CameraMode{FirstPerson, ThirdPerson, Free};
 
 public:
     GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight);
@@ -46,37 +81,28 @@ private:
 
 
 private:
-    ComPtr<ID3D11InputLayout>   m_pVertexLayout;        // input layout
-    ComPtr<ID3D11InputLayout>   m_pVertexLayout2D;        
+    ComPtr<ID3D11InputLayout>   m_pVertexLayout2D;      // input layout
     ComPtr<ID3D11InputLayout>   m_pVertexLayout3D;
+    ComPtr<ID3D11Buffer>        m_pConstantBuffers[4];  // const buffer
 
-    ComPtr<ID3D11Buffer>        m_pVertexBuffer;        // vertex buffer     
-    ComPtr<ID3D11Buffer>        m_pIndexBuffer;         // index buffer
-    ComPtr<ID3D11Buffer>        m_pConstantBuffers[2];  // const buffer
-    UINT m_IndexCount;                                  // obj's index array size
+    GameObject m_WoodCrate;
+    GameObject m_Floor;
+    std::vector<GameObject> m_Walls;
 
-    // int m_CurrFrame;                                    // frame number of flame animation
-    // ShowMode m_CurrMode;                                // current mode of showen 
-    
-    ComPtr<ID3D11ShaderResourceView> m_pWoodCreate;     // wood box texture
-    // std::vector<ComPtr<ID3D11ShaderResourceView>> m_pFireAnime; 
-                                                        // fire texture view
-    ComPtr<ID3D11SamplerState> m_pSamplerState;         // sampler state
-    
-    ComPtr<ID3D11VertexShader>  m_pVertexShader;        // vertex shader
-    ComPtr<ID3D11PixelShader>   m_pPixelShader;         // fragment shader
     ComPtr<ID3D11VertexShader>  m_pVertexShader2D;      
     ComPtr<ID3D11PixelShader>   m_pPixelShader2D;       
     ComPtr<ID3D11VertexShader>  m_pVertexShader3D;      
-    ComPtr<ID3D11PixelShader>   m_pPixelShader3D;       
-    
-    VSConstantBuffer m_VSConstantBuffer;                // GPU constant buffer for vs
-    PSConstantBuffer m_PSConstantBuffer;                // GPU constant buffer for ps
-    
-    DirectionalLight m_DirLight;                        // defualt direction light
-    PointLight m_PointLight;                            // defualt point light 
-    SpotLight m_SpotLight;                              // defualt spot light
+    ComPtr<ID3D11PixelShader>   m_pPixelShader3D;    
 
+    CBChangeEveryFrame m_CBFrame;                       // update per frame
+    CBChangeOnResize m_CBOnResize;                      // update when windows size changed
+    CBChangeRarely m_CBRarely;                          // always const
+                
+    ComPtr<ID3D11SamplerState> m_pSamplerState;         // sampler state
+
+    std::shared_ptr<Camera> m_pCamera;
+    CameraMode m_CameraMode;
+    
     ComPtr<ID3D11RasterizerState> m_pRSWireframe;       // RS state: line framework only
     bool m_IsWireframeMode;
 };
