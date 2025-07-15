@@ -192,3 +192,54 @@ end run();
 
 ~GameApp(): ~D3DApp();
 ```
+
+### 5 Camera, GameObject and Transform
+- start with main function
+- not implement in project 
+- can privious code be as gemotry viewer?
+
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();         // Inheritance
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
+            OnResize();             // resize window and stuff
+        InitImGui();                // fonts setting here
+    GameApp::InitEffect()
+        create and compile shader file;
+        create and bind layout;     // layout is important
+    GameApp::InitResource()
+        resetMesh();                // init mesh model from geometry.h
+            INIT and CREATE: vertex and index buffer;
+        const buffer init/set/create/bind/map/unmap;
+        INIT Texture and Sampler;
+        INIT Rasterizer State;      // RS cull model etc.
+        input assemble;
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            ImGui component(Begin/End);     // ImGui component instance.
+                ResetMesh();                    // runtime change Mesh
+                    INIT and CREATE: vertex and index buffer;
+                RSSetState();                   // runtime change RS
+            ImGui Render();
+            ImGui io event;                 // mouse and keyboard control.(cancel in c7)
+            update/mapping const buffer;    // ImGui controller modify.
+        GameApp::D3DApp::DrawScene()        
+            ClearView();                    // render target view, depgh and stencil
+            DrawIndex();                    // index data of model.
+            ImGui lDX11 DrawData;           // trigger of Direct3D Draw.
+            Present();                      // Swap Chain flip and present.
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+```

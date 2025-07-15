@@ -13,7 +13,6 @@ extern "C"
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 0x00000001;
 }
 
-// Reference external functions from ImGui lib
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace
@@ -59,13 +58,13 @@ D3DApp::D3DApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidt
     g_pd3dApp = this;
 }
 
+
 D3DApp::~D3DApp()
 {
     // 恢复所有默认设定
     if (m_pd3dImmediateContext)
         m_pd3dImmediateContext->ClearState();
-    
-    // ???
+
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -106,11 +105,9 @@ int D3DApp::Run()
             if (!m_AppPaused)
             {
                 CalculateFrameStats();
-                // imgui setting //////////
                 ImGui_ImplDX11_NewFrame();
                 ImGui_ImplWin32_NewFrame();
                 ImGui::NewFrame();
-                // imgui end setting //////
                 UpdateScene(m_Timer.DeltaTime());
                 DrawScene();
             }
@@ -158,13 +155,13 @@ void D3DApp::OnResize()
 
     // 重设交换链并且重新创建渲染目标视图
     ComPtr<ID3D11Texture2D> backBuffer;
-    HR(m_pSwapChain->ResizeBuffers(1, m_ClientWidth, m_ClientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
+    HR(m_pSwapChain->ResizeBuffers(1, m_ClientWidth, m_ClientHeight, DXGI_FORMAT_B8G8R8A8_UNORM, 0));	// 注意此处DXGI_FORMAT_B8G8R8A8_UNORM
     HR(m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf())));
     HR(m_pd3dDevice->CreateRenderTargetView(backBuffer.Get(), nullptr, m_pRenderTargetView.GetAddressOf()));
-    
+
     // 设置调试对象名
     D3D11SetDebugObjectName(backBuffer.Get(), "BackBuffer[0]");
-    
+
     backBuffer.Reset();
 
 
@@ -187,7 +184,6 @@ void D3DApp::OnResize()
         depthStencilDesc.SampleDesc.Count = 1;
         depthStencilDesc.SampleDesc.Quality = 0;
     }
-    
 
 
     depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -212,19 +208,19 @@ void D3DApp::OnResize()
     m_ScreenViewport.MaxDepth = 1.0f;
 
     m_pd3dImmediateContext->RSSetViewports(1, &m_ScreenViewport);
-    
+
     // 设置调试对象名
     D3D11SetDebugObjectName(m_pDepthStencilBuffer.Get(), "DepthStencilBuffer");
     D3D11SetDebugObjectName(m_pDepthStencilView.Get(), "DepthStencilView");
     D3D11SetDebugObjectName(m_pRenderTargetView.Get(), "BackBufferRTV[0]");
-    
+
 }
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (ImGui_ImplWin32_WndProcHandler(m_hMainWnd, msg, wParam, lParam))
         return true;
-    
+
     switch (msg)
     {
         // WM_ACTIVATE is sent when the window is activated or deactivated.  
@@ -332,21 +328,11 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         ((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
         ((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
         return 0;
-
-    case WM_LBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-        return 0;
-    case WM_LBUTTONUP:
-    case WM_MBUTTONUP:
-    case WM_RBUTTONUP:
-        return 0;
-    case WM_MOUSEMOVE:
-        return 0;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+
 
 bool D3DApp::InitMainWindow()
 {
@@ -368,6 +354,10 @@ bool D3DApp::InitMainWindow()
         return false;
     }
 
+    // 将窗口调整到中心
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
     // Compute window rectangle dimensions based on requested client area dimensions.
     RECT R = { 0, 0, m_ClientWidth, m_ClientHeight };
     AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
@@ -375,7 +365,8 @@ bool D3DApp::InitMainWindow()
     int height = R.bottom - R.top;
 
     m_hMainWnd = CreateWindow(L"D3DWndClassName", m_MainWndCaption.c_str(),
-        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, m_hAppInst, 0);
+        WS_OVERLAPPEDWINDOW, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height, 0, 0, m_hAppInst, 0);
+
     if (!m_hMainWnd)
     {
         MessageBox(0, L"CreateWindow Failed.", 0, 0);
@@ -394,6 +385,9 @@ bool D3DApp::InitDirect3D()
 
     // 创建D3D设备 和 D3D设备上下文
     UINT createDeviceFlags = 0;
+#ifndef USE_IMGUI
+    createDeviceFlags |= D3D11_CREATE_DEVICE_BGRA_SUPPORT;	// Direct2D需要支持BGRA格式
+#endif
 #if defined(DEBUG) || defined(_DEBUG)  
     createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
@@ -477,7 +471,11 @@ bool D3DApp::InitDirect3D()
         ZeroMemory(&sd, sizeof(sd));
         sd.Width = m_ClientWidth;
         sd.Height = m_ClientHeight;
+#ifdef USE_IMGUI
         sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+#else
+        sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;		// 注意此处DXGI_FORMAT_B8G8R8A8_UNORM
+#endif
         // 是否开启4倍多重采样？
         if (m_Enable4xMsaa)
         {
@@ -513,7 +511,11 @@ bool D3DApp::InitDirect3D()
         sd.BufferDesc.Height = m_ClientHeight;
         sd.BufferDesc.RefreshRate.Numerator = 60;
         sd.BufferDesc.RefreshRate.Denominator = 1;
+#ifdef USE_IMGUI
         sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+#else
+        sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;		// 注意此处DXGI_FORMAT_B8G8R8A8_UNORM
+#endif
         sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
         sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
         // 是否开启4倍多重采样？
@@ -556,20 +558,23 @@ bool D3DApp::InitImGui()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
+
     // fonts setting
     const char* path = "Fonts/kaiu.ttf";
     io.Fonts->AddFontFromFileTTF(path, 26.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
 
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // 允许键盘控制
+    io.ConfigWindowsMoveFromTitleBarOnly = true;              // 仅允许标题拖动
 
-    // setting Style of Dear ImGui 
+    // 设置Dear ImGui风格
     ImGui::StyleColorsDark();
 
-    // platfrom and render backend
+    // 设置平台/渲染器后端
     ImGui_ImplWin32_Init(m_hMainWnd);
     ImGui_ImplDX11_Init(m_pd3dDevice.Get(), m_pd3dImmediateContext.Get());
 
     return true;
+
 }
 
 void D3DApp::CalculateFrameStats()
