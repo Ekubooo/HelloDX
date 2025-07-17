@@ -5,6 +5,7 @@
 #include <LightHelper.h>
 #include <Geometry.h>
 #include <Camera.h>
+#include <RenderStates.h>
 
 class GameApp : public D3DApp
 {
@@ -13,11 +14,12 @@ public:
     {
         DirectX::XMMATRIX world;
         DirectX::XMMATRIX worldInvTranspose;
+        Material material;
     };
     struct CBChangeEveryFrame
     {
         DirectX::XMMATRIX view;
-        DirectX::XMFLOAT4 eyePos;
+        DirectX::XMVECTOR eyePos;
     };
     struct CBChangeOnResize
     {
@@ -28,11 +30,10 @@ public:
         DirectionalLight _dirLight[10];
         PointLight _pointLight[10];
         SpotLight _spotLight[10];
-        Material _material;
         int numDirLight;
         int numPointLight;
         int numSpotLight;
-        float pad;
+        int pad;
     };
     
     class GameObject
@@ -47,15 +48,17 @@ public:
         template<class VertexType, class IndexType>
         void SetBuffer(ID3D11Device * device, const Geometry::MeshData<VertexType, IndexType>& meshData);
         void SetTexture(ID3D11ShaderResourceView * texture);
+        void SetMaterial(const Material& material);
         void Draw(ID3D11DeviceContext * deviceContext);
         void SetDebugObjectName(const std::string& name);
 
     private:
         Transform m_Transform;
+        Material m_Material;
         ComPtr<ID3D11ShaderResourceView> m_pTexture;
         ComPtr<ID3D11Buffer> m_pVertexBuffer; 
         ComPtr<ID3D11Buffer> m_pIndexBuffer;
-        UINT m_VertexStride;
+        UINT m_VertexStride;        // vertex size (Byte)
         UINT m_IndexCount;          // obj's index array size
     
     };
@@ -77,16 +80,15 @@ private:
 
     template<class VertexType>
     bool ResetMesh(const Geometry::MeshData<VertexType> &meshData);
-    // bool ResetMesh(const Geometry::MeshData<VertexPosNormalColor>& meshData);
-
 
 private:
     ComPtr<ID3D11InputLayout>   m_pVertexLayout2D;      // input layout
     ComPtr<ID3D11InputLayout>   m_pVertexLayout3D;
     ComPtr<ID3D11Buffer>        m_pConstantBuffers[4];  // const buffer
 
-    GameObject m_WoodCrate;
+    GameObject m_WireFence;
     GameObject m_Floor;
+    GameObject m_Water;
     std::vector<GameObject> m_Walls;
 
     ComPtr<ID3D11VertexShader>  m_pVertexShader2D;      
@@ -97,8 +99,6 @@ private:
     CBChangeEveryFrame m_CBFrame;                       // update per frame
     CBChangeOnResize m_CBOnResize;                      // update when windows size changed
     CBChangeRarely m_CBRarely;                          // always const
-                
-    ComPtr<ID3D11SamplerState> m_pSamplerState;         // sampler state
 
     std::shared_ptr<Camera> m_pCamera;
     CameraMode m_CameraMode;

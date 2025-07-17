@@ -1,5 +1,5 @@
 
-// directional light
+// 方向光
 struct DirectionalLight
 {
     float4 ambient;
@@ -9,7 +9,7 @@ struct DirectionalLight
     float pad;
 };
 
-// point light
+// 点光
 struct PointLight
 {
     float4 ambient;
@@ -23,7 +23,7 @@ struct PointLight
     float pad;
 };
 
-// spot light
+// 聚光灯
 struct SpotLight
 {
     float4 ambient;
@@ -40,7 +40,7 @@ struct SpotLight
     float pad;
 };
 
-// surface material 
+// 物体表面材质
 struct Material
 {
     float4 ambient;
@@ -57,21 +57,21 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
     out float4 diffuse,
     out float4 spec)
 {
-    // init output
+    // 初始化输出
     ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
     diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
     spec = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-    // light direction is nagative direction of light source
+    // 光向量与照射方向相反
     float3 lightVec = -L.direction;
 
-    // ambient 
+    // 添加环境光
     ambient = mat.ambient * L.ambient;
 
-    // diffues and specular
+    // 添加漫反射光和镜面光
     float diffuseFactor = dot(lightVec, normal);
 
-    // flatten avoid dynamic branch (?)
+    // 展开，避免动态分支
     [flatten]
     if (diffuseFactor > 0.0f)
     {
@@ -87,31 +87,31 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
 void ComputePointLight(Material mat, PointLight L, float3 pos, float3 normal, float3 toEye,
     out float4 ambient, out float4 diffuse, out float4 spec)
 {
-    // init output
+    // 初始化输出
     ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
     diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
     spec = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-    // surface to light source
+    // 从表面到光源的向量
     float3 lightVec = L.position - pos;
 
-    // distance of surface to light source
+    // 表面到光线的距离
     float d = length(lightVec);
 
-    // light range test
+    // 灯光范围测试
     if (d > L.range)
         return;
 
-    // normalized light direction
+    // 标准化光向量
     lightVec /= d;
 
-    // ambient
+    // 环境光计算
     ambient = mat.ambient * L.ambient;
 
-    // diffues and specular
+    // 漫反射和镜面计算
     float diffuseFactor = dot(lightVec, normal);
 
-    // flatten avoid dynamic branch (?)
+    // 展开以避免动态分支
     [flatten]
     if (diffuseFactor > 0.0f)
     {
@@ -122,7 +122,7 @@ void ComputePointLight(Material mat, PointLight L, float3 pos, float3 normal, fl
         spec = specFactor * mat.specular * L.specular;
     }
 
-    // light attenuation
+    // 光的衰弱
     float att = 1.0f / dot(L.att, float3(1.0f, d, d * d));
 
     diffuse *= att;
@@ -133,32 +133,32 @@ void ComputePointLight(Material mat, PointLight L, float3 pos, float3 normal, fl
 void ComputeSpotLight(Material mat, SpotLight L, float3 pos, float3 normal, float3 toEye,
     out float4 ambient, out float4 diffuse, out float4 spec)
 {
-    // init output
+    // 初始化输出
     ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
     diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
     spec = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-    // surface to light source
+    // // 从表面到光源的向量
     float3 lightVec = L.position - pos;
 
-    // distance of surface to light source
+    // 表面到光源的距离
     float d = length(lightVec);
 
-    // light range test
+    // 范围测试
     if (d > L.range)
         return;
 
-    // normalized light direction
+    // 标准化光向量
     lightVec /= d;
 
-    // ambient
+    // 计算环境光部分
     ambient = mat.ambient * L.ambient;
 
 
-    // diffues and specular
+    // 计算漫反射光和镜面反射光部分
     float diffuseFactor = dot(lightVec, normal);
 
-    // flatten avoid dynamic branch (?)
+    // 展开以避免动态分支
     [flatten]
     if (diffuseFactor > 0.0f)
     {
