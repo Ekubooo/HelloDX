@@ -271,6 +271,7 @@ end run();
 - Class Render State 
     - ComPtr for memory management.
     - static STATE member.
+    - INIT: Blend Description.
 
 - Structure:
 ```
@@ -288,13 +289,16 @@ GameApp::Init()
         create and compile shader file;
         create and bind layout;     // layout is important
     GameApp::InitResource()
-        const buffer init/set/create/bind/map/unmap;
-        INIT Texture and Sampler    // for every GameObject
+        INIT and SET constant buffer; 
+        for: every GameObject       // INIT Texture and Sampler
             GameObject.SetBuffer(); 
             GameObject.SetTexture();
+            GameObject.SetMaterial();
             GameObject.GetTransform().SetPosition();
-        // INIT Rasterizer State;      // RS cull model etc.
-        input assemble;
+        Input Assemble;
+            UPDATE constant buffer;
+            INIT and SET RenderStates;
+            SET Blend State;
 end Init();
 
 D3DApp::Run()
@@ -302,12 +306,17 @@ D3DApp::Run()
     while loop:
         debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
         GameApp::D3DApp::UpdateScene();     
-            ImGui component(Begin/End/Render);  // Movement controller
-            update pos for camera and woodBox;
-            update/mapping const buffer;        // ImGui controller modify.
+            SET ImGui component;                // Controller
+            update pos for camera and GameObject;
+            update/mapping const buffer;       
         GameApp::D3DApp::DrawScene()        
             ClearView();                        // render target view, depgh and stencil
-            GameObject.Draw();                  // index data of model.
+            // Blending draw //////////////////////////////////
+            for: every non-transparent GameObject
+                GameObject.Draw();                  // index data of model.
+            for: every transparent GameObject
+                GameObject.Draw();                  // index data of model.
+            // Blending end ///////////////////////////////////
             ImGui DX11 DrawData();              // trigger of Direct3D Draw.
             Present();                          // Swap Chain flip and present.
     end loop;

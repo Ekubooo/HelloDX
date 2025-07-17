@@ -103,7 +103,7 @@ void GameApp::DrawScene()
     // draw object (Transparent) 
     m_pd3dImmediateContext->RSSetState(RenderStates::RSNoCull.Get());
     m_pd3dImmediateContext->OMSetBlendState(RenderStates::BSTransparent.Get(), nullptr, 0xFFFFFFFF);
-
+        // fence box
     Transform& wireFrameTransform = m_WireFence.GetTransform();
     wireFrameTransform.SetPosition(2.0f, 0.01f, 0.0f);
     m_WireFence.Draw(m_pd3dImmediateContext.Get());
