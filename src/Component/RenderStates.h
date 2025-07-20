@@ -22,7 +22,6 @@ public:
     static bool IsInit();
 
     static void InitAll(ID3D11Device * device);
-    // 使用ComPtr无需手工释放
 
 public:
     static ComPtr<ID3D11RasterizerState> RSWireframe;		            // 光栅化器状态：线框模式
