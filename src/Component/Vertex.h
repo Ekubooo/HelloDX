@@ -9,6 +9,7 @@
 #ifndef VERTEX_H
 #define VERTEX_H
 
+#include "WinMin.h"
 #include <d3d11_1.h>
 #include <DirectXMath.h>
 

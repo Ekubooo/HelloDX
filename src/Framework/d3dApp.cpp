@@ -557,12 +557,6 @@ bool D3DApp::InitImGui()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-
-
-    // fonts setting
-    const char* path = "Fonts/kaiu.ttf";
-    io.Fonts->AddFontFromFileTTF(path, 26.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
-
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // 允许键盘控制
     io.ConfigWindowsMoveFromTitleBarOnly = true;              // 仅允许标题拖动
 

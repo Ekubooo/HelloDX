@@ -139,26 +139,26 @@ bool BasicEffect::InitAll(ID3D11Device * device)
 
     ComPtr<ID3DBlob> blob;
 
-    // 创建顶点着色器(2D)
-    HR(CreateShaderFromFile(L"HLSL\\Basic_2D_VS.cso", L"HLSL\\Basic_2D_VS.hlsl", "VS", "vs_5_0", blob.GetAddressOf()));
+    // CREATE vertex shader (2D)
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_2D_VS.cso", L"HLSL\\Basic\\Basic_2D_VS.hlsl", "VS", "vs_5_0", blob.GetAddressOf()));
     HR(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pVertexShader2D.GetAddressOf()));
-    // 创建顶点布局(2D)
+    // vertex layout (2D)
     HR(device->CreateInputLayout(VertexPosTex::inputLayout, ARRAYSIZE(VertexPosTex::inputLayout),
         blob->GetBufferPointer(), blob->GetBufferSize(), pImpl->m_pVertexLayout2D.GetAddressOf()));
 
-    // 创建像素着色器(2D)
-    HR(CreateShaderFromFile(L"HLSL\\Basic_2D_PS.cso", L"HLSL\\Basic_2D_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    // CREATE pixal shader (2D)
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_2D_PS.cso", L"HLSL\\Basic\\Basic_2D_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
     HR(device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pPixelShader2D.GetAddressOf()));
 
-    // 创建顶点着色器(3D)
-    HR(CreateShaderFromFile(L"HLSL\\Basic_3D_VS.cso", L"HLSL\\Basic_3D_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+    // CREATE vertex shader (3D)
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_3D_VS.cso", L"HLSL\\Basic\\Basic_3D_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
     HR(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pVertexShader3D.GetAddressOf()));
-    // 创建顶点布局(3D)
+    // vertex layout(3D)
     HR(device->CreateInputLayout(VertexPosNormalTex::inputLayout, ARRAYSIZE(VertexPosNormalTex::inputLayout),
         blob->GetBufferPointer(), blob->GetBufferSize(), pImpl->m_pVertexLayout3D.GetAddressOf()));
 
-    // 创建像素着色器(3D)
-    HR(CreateShaderFromFile(L"HLSL\\Basic_3D_PS.cso", L"HLSL\\Basic_3D_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+    // CREATE pixal shader(3D)
+    HR(CreateShaderFromFile(L"HLSL\\Basic\\Basic_3D_PS.cso", L"HLSL\\Basic\\Basic_3D_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
     HR(device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pPixelShader3D.GetAddressOf()));
 
 
@@ -169,13 +169,13 @@ bool BasicEffect::InitAll(ID3D11Device * device)
         &pImpl->m_CBOnResize, 
         &pImpl->m_CBRarely});
 
-    // 创建常量缓冲区
+    // CREATE Constant Buffer
     for (auto& pBuffer : pImpl->m_pCBuffers)
     {
         HR(pBuffer->CreateBuffer(device));
     }
 
-    // 设置调试对象名
+    // set debug obj name 
     D3D11SetDebugObjectName(pImpl->m_pVertexLayout2D.Get(), "VertexPosTexLayout");
     D3D11SetDebugObjectName(pImpl->m_pVertexLayout3D.Get(), "VertexPosNormalTexLayout");
     D3D11SetDebugObjectName(pImpl->m_pCBuffers[0]->cBuffer.Get(), "CBDrawing");

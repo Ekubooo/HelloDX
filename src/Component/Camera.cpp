@@ -101,7 +101,7 @@ void Camera::SetViewPort(float topLeftX, float topLeftY, float width, float heig
 
 
 // ******************
-// First person/free perspective perspective
+// 第一人称/自由视角摄像机
 //
 
 FirstPersonCamera::~FirstPersonCamera()
@@ -172,7 +172,7 @@ void FirstPersonCamera::RotateY(float rad)
 
 
 // ******************
-// Third person perspective
+// 第三人称摄像机
 //
 
 ThirdPersonCamera::~ThirdPersonCamera()
