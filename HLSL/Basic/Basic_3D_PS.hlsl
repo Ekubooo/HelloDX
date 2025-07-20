@@ -4,7 +4,7 @@
 float4 PS(VertexPosHWNormalTex pIn) : SV_Target
 {
     // Alpha cull befor calculate, avioid redundant calculations
-    float4 texColor = g_Tex.Sample(g_SamLinear, pIn.tex);
+    float4 texColor = g_Tex.Sample(g_Sam, pIn.tex);
     clip(texColor.a - 0.1f);
 
     // normalize
@@ -38,7 +38,7 @@ float4 PS(VertexPosHWNormalTex pIn) : SV_Target
         spec += S;
     }
     
-    // Reflection transform
+    // reflection need reflect transform
     PointLight pointLight;
     [unroll]
     for (i = 0; i < 5; ++i)
@@ -55,8 +55,8 @@ float4 PS(VertexPosHWNormalTex pIn) : SV_Target
         spec += S;
     }
 
-    // Reflection transform
-    SpotLight spotLight;
+    // reflection need reflect transform
+    SpotLight spotLight; 
     [unroll]
     for (i = 0; i < 5; ++i)
     {
