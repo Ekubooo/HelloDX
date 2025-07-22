@@ -411,7 +411,7 @@ end run();
 
 ```
 
-## 8 ???
+## 8 Assimp and new frame work 
 - gemotry viewer NOT INCLUDE
 - Class GameObject
     - DATA: Transform, Mesh, Texture, World Matrix.
@@ -438,6 +438,12 @@ end run();
     - const buffer structure.
     - shader loader framework.
     - Set and Bind operation.
+
+- Overall new feture:
+    - multiple vertex buffer input slot for variable shader.
+    - shader reflection.
+    - new EffectHelper, just use*.
+
 
 - Structure:
 ```

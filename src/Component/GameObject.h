@@ -1,9 +1,23 @@
-#ifndef GAMEOBJECT_H
-#define GAMEOBJECT_H
+//***************************************************************************************
+// GameObject.h by X_Jun(MKXJun) (C) 2018-2022 All Rights Reserved.
+// Licensed under the MIT License.
+//
+// 简易游戏对象
+// Simple game object.
+//***************************************************************************************
 
-#include "Effects.h"
-#include <Geometry.h>
-#include <Transform.h>
+#pragma once
+
+#ifndef GAME_OBJECT_H
+#define GAME_OBJECT_H
+
+#include "Geometry.h"
+#include "Material.h"
+#include "MeshData.h"
+#include "Transform.h"
+#include "IEffect.h"
+
+struct Model;
 
 class GameObject
 {
@@ -11,71 +25,61 @@ public:
     template <class T>
     using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-    GameObject();
 
-    // get object transform
+    GameObject() = default;
+    ~GameObject() = default;
+
+    GameObject(const GameObject&) = default;
+    GameObject& operator=(const GameObject&) = default;
+
+    GameObject(GameObject&&) = default;
+    GameObject& operator=(GameObject&&) = default;
+
+    // 获取物体变换
     Transform& GetTransform();
+    // 获取物体变换
     const Transform& GetTransform() const;
 
-    template<class VertexType, class IndexType>
-    void SetBuffer(ID3D11Device* device, const Geometry::MeshData<VertexType, IndexType>& meshData);
+    //
+    // 相交检测
+    //
+    void FrustumCulling(const DirectX::BoundingFrustum& frustumInWorld);
+    void CubeCulling(const DirectX::BoundingOrientedBox& obbInWorld);
+    void CubeCulling(const DirectX::BoundingBox& aabbInWorld);
+    bool InFrustum() const { return m_InFrustum; }
 
-    void SetTexture(ID3D11ShaderResourceView* texture);
+    //
+    // 模型
+    //
+    void SetModel(const Model* pModel);
+    const Model* GetModel() const;
 
-    void SetMaterial(const Material& material);
+    DirectX::BoundingBox GetLocalBoundingBox() const;
+    DirectX::BoundingBox GetLocalBoundingBox(size_t idx) const;
+    DirectX::BoundingBox GetBoundingBox() const;
+    DirectX::BoundingBox GetBoundingBox(size_t idx) const;
+    DirectX::BoundingOrientedBox GetBoundingOrientedBox() const;
+    DirectX::BoundingOrientedBox GetBoundingOrientedBox(size_t idx) const;
+    //
+    // 绘制
+    //
 
-    void Draw(ID3D11DeviceContext* deviceContext, BasicEffect& effect);
+    void SetVisible(bool visible) {
+        m_InFrustum = visible;
+        m_SubModelInFrustum.assign(m_SubModelInFrustum.size(), true);
+    }
 
-    // if buffer reset, debug name reset as well
-    void SetDebugObjectName(const std::string& name);
-private:
-    Transform m_Transform;								// object transform data
-    Material m_Material;								// object material 
-    ComPtr<ID3D11ShaderResourceView> m_pTexture;		// object texture
-    ComPtr<ID3D11Buffer> m_pVertexBuffer;				// vertex buffer 
-    ComPtr<ID3D11Buffer> m_pIndexBuffer;				// index buffer
-    UINT m_VertexStride;								// vertex byte size
-    UINT m_IndexCount;								    // index counter
+    // 绘制对象
+    void Draw(ID3D11DeviceContext* deviceContext, IEffect& effect);
+
+protected:
+    const Model* m_pModel = nullptr;
+    std::vector<bool> m_SubModelInFrustum;
+    Transform m_Transform = {};
+    bool m_InFrustum = true;
 };
 
-template<class VertexType, class IndexType>
-inline void GameObject::SetBuffer(ID3D11Device * device, const Geometry::MeshData<VertexType, IndexType>& meshData)
-{
-    // release previous resource
-    m_pVertexBuffer.Reset();
-    m_pIndexBuffer.Reset();
 
-    // check device
-    if (device == nullptr)
-        return;
-
-    // INIT: vertex buffer description
-    m_VertexStride = sizeof(VertexType);
-    D3D11_BUFFER_DESC vbd;
-    ZeroMemory(&vbd, sizeof(vbd));
-    vbd.Usage = D3D11_USAGE_IMMUTABLE;
-    vbd.ByteWidth = (UINT)meshData.vertexVec.size() * m_VertexStride;
-    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vbd.CPUAccessFlags = 0;
-    // CREATE: vertex buffer 
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData, sizeof(InitData));
-    InitData.pSysMem = meshData.vertexVec.data();
-    device->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf());
-
-    // INIT: index buffer description
-    m_IndexCount = (UINT)meshData.indexVec.size();
-    D3D11_BUFFER_DESC ibd;
-    ZeroMemory(&ibd, sizeof(ibd));
-    ibd.Usage = D3D11_USAGE_IMMUTABLE;
-    ibd.ByteWidth = m_IndexCount * sizeof(IndexType);
-    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    ibd.CPUAccessFlags = 0;
-    // CREATE: index buffer 
-    InitData.pSysMem = meshData.indexVec.data();
-    device->CreateBuffer(&ibd, &InitData, m_pIndexBuffer.GetAddressOf());
-
-}
 
 
 #endif
