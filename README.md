@@ -1,1 +1,3 @@
-# Yutaka_DX s
+# Yutaka_DX 
+
+- Model, Texture and Shader Path Check.

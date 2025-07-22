@@ -453,46 +453,49 @@ GameApp(): D3DApp()         // init
 GameApp::Init()
     D3DApp::Init();             
         InitMainWindow();           // win32 windows setting
-        InitDirect3D()      
-            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
-            OnResize();             // resize window and stuff
+        InitDirect3D();              
         InitImGui();                // fonts setting here
+    TextureLoader.Init();
+        CREATE view and LOAD resource;
+    ModelLoader.Init();
+        BIND D3D devices;
     RenderStates::InitAll()    
-        INIT Render State that is needed;
+        INIT static Render State;
     BasicEffect::InitAll()  
         CREATE and COMPILE shader;
         INIT and CREATE constant buffer;
     GameApp::InitResource()
-        Loading resources;          // Texture
-        INIT GameObject, Camera and Light;
+        LOAD Model;
+        INIT Camera and Light;
 end Init();
 
 D3DApp::Run()
     timer reset;
     while loop:
-        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
-        GameApp::D3DApp::UpdateScene();     
-            SET ImGui component;                // Controller
-            UPDATE const buffer;                // mapping 
-        GameApp::D3DApp::DrawScene()        
+        Timer.tick(); ImGui::NewFrame();
+        GameApp::D3DApp::UpdateScene()     
+            ImGui Controller Change;                
+            Camera Transform Change;
+        GameApp::D3DApp::DrawScene():     
+            INIT and CREATE Backup Buffer;
             ClearView();                        // render target view, depgh and stencil
             // draw sequence //////////////////////////////////////
-            For: every sequence(?)
-                SET Rendering and Blending States;  
-                Input Assemble: layout and Topology;
-                SET sampler and shader;
-                GameObject.Draw():
-                    Input Assemble: Vertex and Index Buffer;
-                    SET MVP(?), Material and Texture;
-                    GameObject.BasicEffect.Apply()
-                        cBuffer.BindVS();
-                        cBuffer.BindPS();
-                    GameObject.Device.DrawIndex();
-                GameObject.Draw() end;
-            sequence end;
+            INIT and SET Camera ViewPort for RS;
+            SET Rendering States: DEFAULT;  
+                Input Assemble: layout and Topology;    // ? 
+                SET sampler and shader;                 // ?
+            For: every GameObject.Draw():
+                Input Assemble: Vertex and Index Buffer;
+                SET MVP(?), Material and Texture;
+                GameObject.BasicEffect.Apply()
+                    cBuffer.BindVS();
+                    cBuffer.BindPS();
+                GameObject.Device.DrawIndex();
+            GameObject.Draw() end;
             // draw sequence end //////////////////////////////////
             ImGui DX11 DrawData();              // trigger of Direct3D Draw.
             Present();                          // Swap Chain flip and present.
+        end DrawSence();
     end loop;
 end run();
 

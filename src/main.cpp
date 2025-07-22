@@ -12,9 +12,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE prevInstance,
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
-    // GameApp theApp(hInstance, L"DirectX11 Initialization", 1280, 720);
-    GameApp theApp(hInstance, L"Living Without FX11", 1920, 1080);
-
+    GameApp theApp(hInstance, L"YUTAKA Engine", 1920, 1080);
 
     if (!theApp.Init())
         return 0;

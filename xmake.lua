@@ -23,28 +23,32 @@ includes("ImGui")
 add_requires("assimp",{system = false })
 
 -- ////////////////
-targetName = "HelloDX"
+targetName = "YUTAKA_DX"
 target(targetName)
     set_kind("binary")
     set_targetdir(path.join(binDir,targetName))
     set_rundir("$(projectdir)")
-    add_deps("ImGui")
+    add_packages("assimp")
     add_dx_sdk_options()
+    -- add_deps("Component")
+    -- add_deps("Framework")
+    -- add_deps("Loader")
+    add_deps("ImGui")
     add_rules("imguiini")
+    add_includedirs("src/")
     add_includedirs("src/Component")
     add_includedirs("src/Framework")
     add_includedirs("src/Loader")
     add_includedirs("src/RP")
-    add_includedirs("src/")
     add_headerfiles("**.h")
     add_files("**.cpp")    
 
     -- Shader
     add_rules("hlsl_shader_complier")
-    add_headerfiles("HLSL/**.hlsl|HLSL/**.hlsli")
-    add_headerfiles("HLSL/**/**.hlsl|HLSL/**/**.hlsli")
-    add_files("HLSL/**.hlsl|HLSL/**.hlsli")
-    add_files("HLSL/**/**.hlsl|HLSL/**/**.hlsli")
+    add_headerfiles("SHADER/**.hlsl|SHADER/**.hlsli")
+    add_headerfiles("SHADER/**/**.hlsl|SHADER/**/**.hlsli")
+    add_files("SHADER/**.hlsl|SHADER/**.hlsli")
+    add_files("SHADER/**/**.hlsl|SHADER/**/**.hlsli")
     -- assert
     add_rules("asset_file")
 
