@@ -1,5 +1,6 @@
-## the whole process of dx based graphics engine
-### overall initiative DX11
+# The process of dx based graphics engine
+
+## 1 overall initiative DX11
 - start with main() function:
 
 ```
@@ -40,7 +41,7 @@ instance destruction        // ~D3DApp();
 ```
 
 
-### Render Pipeline and ImGui 
+## 2 Render Pipeline and ImGui 
 - start with main function
 
 ```
@@ -89,8 +90,406 @@ D3DApp::Run()
 ~GameApp(): ~D3DApp();
 ```
 
-### Lighting, Geometry and Rasterization state
+## 3 Lighting, Geometry and Rasterization state
 - start with main function
 
 ```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();         // Inheritance
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, 
+            FEATURE, DXGI, SWAP CHAIN;
+            OnResize();
+        InitImGui();                // fonts setting here
+    GameApp::InitEffect()
+        ComPtr<ID3DBlob> blob;
+        create and compile shader file;
+        create and bind layout;     // layout important
+    GameApp::InitResource()
+        resetMesh();                // init mesh model from geometry.h
+            INIT and CREATE: vertex and index buffer;
+        const buffer init/set/create/bind/map/unmap;
+        init Rasterizer State DESC; // RS cull model etc.
+        input assemble;
+
+D3DApp::Run()
+    timer reset.
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            ImGui component(Begin/End);     // ImGui component instance.
+                ResetMesh();                    // runtime change Mesh
+                    INIT and CREATE: vertex and index buffer;
+                RSSetState();                   // runtime change RS
+            ImGui Render();
+            ImGui io event;                 // mouse and keyboard control.(cancel in c7)
+            update/mapping const buffer;    // ImGui controller modify.
+        GameApp::D3DApp::DrawScene()        
+            ClearRenderTargetView();
+            ClearDepthStencilView();
+            DrawIndex();                    // index for cube or model.
+            ImGui lDX11 DrawData;           // trigger for Direct3D Draw.
+            Present();                      // Swap Chain flip and present.
+    end loop;
+
+~GameApp(): ~D3DApp();
+```
+
+
+
+## 4 Texture Loader
+- start with main function
+- extra content: frame animation demo
+- extra content: multiple light source demo
+
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();         // Inheritance
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
+            OnResize();             // resize window and stuff
+        InitImGui();                // fonts setting here
+    GameApp::InitEffect()
+        ComPtr<ID3DBlob> blob;
+        create and compile shader file;
+        create and bind layout;     // layout is important
+    GameApp::InitResource()
+        resetMesh();                // init mesh model from geometry.h
+            INIT and CREATE: vertex and index buffer;
+        const buffer init/set/create/bind/map/unmap;
+        INIT Texture and Sampler;
+        INIT Rasterizer State;      // RS cull model etc.
+        input assemble;
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            ImGui component(Begin/End);     // ImGui component instance.
+                ResetMesh();                    // runtime change Mesh
+                    INIT and CREATE: vertex and index buffer;
+                RSSetState();                   // runtime change RS
+            ImGui Render();
+            ImGui io event;                 // mouse and keyboard control.(cancel in c7)
+            update/mapping const buffer;    // ImGui controller modify.
+        GameApp::D3DApp::DrawScene()        
+            ClearView();                    // render target view, depgh and stencil
+            DrawIndex();                    // index data of model.
+            ImGui lDX11 DrawData;           // trigger of Direct3D Draw.
+            Present();                      // Swap Chain flip and present.
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+```
+
+## 5 Camera, GameObject and Transform
+- start with main function
+- gemotry viewer NOT INCLUDE
+- Class GameObject
+    - DATA: Transform, Mesh, Texture, World Matrix.
+    - INIT: Vertex buffer, Index buffer, Const buffer. 
+    - FUNC: Update Const buffer, Draw Index.
+- Class TransForm:
+    - DATA: Scale, Rotation, Position.
+    - FUNC: GameObject Transform date read and store.
+- Class Camera:
+    - DATA: Camera data.
+    - FUNC: Data and Movement operation.
+    - Descendants subclass of different kind of camera.
+
+- Structure:
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();         // Inheritance
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
+            OnResize();             // resize window and stuff
+        InitImGui();                // fonts setting here
+    GameApp::InitEffect()
+        create and compile shader file;
+        create and bind layout;     // layout is important
+    GameApp::InitResource()
+        const buffer init/set/create/bind/map/unmap;
+        INIT Texture and Sampler    // for every GameObject
+            GameObject.SetBuffer(); 
+            GameObject.SetTexture();
+            GameObject.GetTransform().SetPosition();
+        // INIT Rasterizer State;      // RS cull model etc.
+        input assemble;
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            ImGui component(Begin/End/Render);  // Movement controller
+            update pos for camera and woodBox;
+            update/mapping const buffer;        // ImGui controller modify.
+        GameApp::D3DApp::DrawScene()        
+            ClearView();                        // render target view, depgh and stencil
+            GameObject.Draw();                  // index data of model.
+            ImGui DX11 DrawData();              // trigger of Direct3D Draw.
+            Present();                          // Swap Chain flip and present.
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+
+```
+
+
+## 6 Blending and Render State.
+- start with main function
+- gemotry viewer NOT INCLUDE
+- Class GameObject
+    - DATA: Transform, Mesh, Texture, World Matrix.
+    - INIT: Vertex buffer, Index buffer, Const buffer. 
+    - FUNC: Update Const buffer, Draw Index.
+- Class TransForm:
+    - DATA: Scale, Rotation, Position.
+    - FUNC: GameObject Transform date read and store.
+- Class Camera:
+    - DATA: Camera data.
+    - FUNC: Data and Movement operation.
+    - Descendants subclass of different kind of camera.
+- Class Render State 
+    - ComPtr for memory management.
+    - static STATE member.
+    - INIT: Blend Description.
+
+- Structure:
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();         // Inheritance
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
+            OnResize();             // resize window and stuff
+        InitImGui();                // fonts setting here
+    GameApp::InitEffect()
+        create and compile shader file;
+        create and bind layout;     // layout is important
+    GameApp::InitResource()
+        INIT and SET constant buffer; 
+        for: every GameObject       // INIT Texture and Sampler
+            GameObject.SetBuffer(); 
+            GameObject.SetTexture();
+            GameObject.SetMaterial();
+            GameObject.GetTransform().SetPosition();
+        Input Assemble;
+            UPDATE constant buffer;
+            INIT and SET RenderStates;
+            SET Blend State;
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            SET ImGui component;                // Controller
+            update pos for camera and GameObject;
+            update/mapping const buffer;       
+        GameApp::D3DApp::DrawScene()        
+            ClearView();                        // render target view, depgh and stencil
+            // Blending draw //////////////////////////////////
+            for: every non-transparent GameObject
+                GameObject.Draw();                  // index data of model.
+            for: every transparent GameObject
+                GameObject.Draw();                  // index data of model.
+            // Blending end ///////////////////////////////////
+            ImGui DX11 DrawData();              // trigger of Direct3D Draw.
+            Present();                          // Swap Chain flip and present.
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+
+```
+
+
+
+## 7 Reflection and Effects Framework
+- gemotry viewer NOT INCLUDE
+- Class GameObject
+    - DATA: Transform, Mesh, Texture, World Matrix.
+    - INIT: Vertex buffer, Index buffer, Const buffer. 
+    - FUNC: Update Const buffer, Draw Index.
+- Class TransForm:
+    - DATA: Scale, Rotation, Position.
+    - FUNC: GameObject Transform date read and store.
+- Class Camera:
+    - DATA: Camera data.
+    - FUNC: Data and Movement operation.
+    - Descendants subclass of different kind of camera.
+- Class Render State 
+    - ComPtr for memory management.
+    - static STATE member.
+    - INIT: Blend Description.
+- Class Effects
+    - Defination of Effects Framework.
+- Class Effect helper 
+    - Update and Bind Operation.
+    - constant buffer management.
+- Class BasicEffect
+    - resource management for GameObject.
+    - const buffer structure.
+    - shader loader framework.
+    - Set and Bind operation.
+
+- Structure:
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();             
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
+            OnResize();             // resize window and stuff
+        InitImGui();                // fonts setting here
+    RenderStates::InitAll()    
+        INIT Render State that is needed;
+    BasicEffect::InitAll()  
+        CREATE and COMPILE shader;
+        INIT and CREATE constant buffer;
+    GameApp::InitResource()
+        Loading resources;          // Texture
+        INIT GameObject, Camera and Light;
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            SET ImGui component;                // Controller
+            UPDATE const buffer;                // mapping 
+        GameApp::D3DApp::DrawScene()        
+            ClearView();                        // render target view, depgh and stencil
+            // draw sequence //////////////////////////////////////
+            For: every sequence(?)
+                SET Rendering and Blending States;  
+                Input Assemble: layout and Topology;
+                SET sampler and shader;
+                GameObject.Draw():
+                    Input Assemble: Vertex and Index Buffer;
+                    SET MVP(?), Material and Texture;
+                    GameObject.BasicEffect.Apply()
+                        cBuffer.BindVS();
+                        cBuffer.BindPS();
+                    GameObject.Device.DrawIndex();
+                GameObject.Draw() end;
+            sequence end;
+            // draw sequence end //////////////////////////////////
+            ImGui DX11 DrawData();              // trigger of Direct3D Draw.
+            Present();                          // Swap Chain flip and present.
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+
+```
+
+## 7* Gemoetry Viewer process
+- gemotry viewer NOT INCLUDE
+- Class GameObject
+    - DATA: Transform, Mesh, Texture, World Matrix.
+    - INIT: Vertex buffer, Index buffer, Const buffer. 
+    - FUNC: Update Const buffer, Draw Index.
+- Class TransForm:
+    - DATA: Scale, Rotation, Position.
+    - FUNC: GameObject Transform date read and store.
+- Class Camera:
+    - DATA: Camera data.
+    - FUNC: Data and Movement operation.
+    - Descendants subclass of different kind of camera.
+- Class Render State 
+    - ComPtr for memory management.
+    - static STATE member.
+    - INIT: Blend Description.
+- Class Effects
+    - Defination of Effects Framework.
+- Class Effect helper 
+    - Update and Bind Operation.
+    - constant buffer management.
+- Class BasicEffect
+    - resource management for GameObject.
+    - const buffer structure.
+    - shader loader framework.
+    - Set and Bind operation.
+
+- Structure:
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();             
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D()      
+            DEVICE, CONTEXT, DRIVER, FEATURE, DXGI, SWAP CHAIN;
+            OnResize();             // resize window and stuff
+        InitImGui();                // fonts setting here
+    RenderStates::InitAll()    
+        INIT Render State that is needed;
+    BasicEffect::InitAll()  
+        CREATE and COMPILE shader;
+        INIT and CREATE constant buffer;
+    GameApp::InitResource()
+        Loading resources;          // Texture
+        INIT GameObject, Camera and Light;
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+        debug, timer tick, Frame Stats and ImGui newFrame(dx11/win32);
+        GameApp::D3DApp::UpdateScene();     
+            SET ImGui component;                // Controller
+            UPDATE const buffer;                // mapping 
+        GameApp::D3DApp::DrawScene()        
+            ClearView();                        // render target view, depgh and stencil
+            // draw sequence //////////////////////////////////////
+            For: every sequence(?)
+                SET Rendering and Blending States;  
+                Input Assemble: layout and Topology;
+                SET sampler and shader;
+                GameObject.Draw():
+                    Input Assemble: Vertex and Index Buffer;
+                    SET MVP(?), Material and Texture;
+                    GameObject.BasicEffect.Apply()
+                        cBuffer.BindVS();
+                        cBuffer.BindPS();
+                    GameObject.Device.DrawIndex();
+                GameObject.Draw() end;
+            sequence end;
+            // draw sequence end //////////////////////////////////
+            ImGui DX11 DrawData();              // trigger of Direct3D Draw.
+            Present();                          // Swap Chain flip and present.
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+
 ```

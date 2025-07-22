@@ -1,28 +1,16 @@
 #ifndef GAMEAPP_H
 #define GAMEAPP_H
 
-#include "d3dApp.h"
+#include <d3dApp.h>
+#include <Vertex.h>
+#include "Effects.h"
+
 
 class GameApp : public D3DApp
 {
 public:
-    struct VertexPosColor
-    {
-        DirectX::XMFLOAT3 pos;
-        DirectX::XMFLOAT4 color;
-        static const D3D11_INPUT_ELEMENT_DESC inputLayout[2];
-    };  // contrast with struct of vertex shader.
-
-    struct ConstantBuffer
-    {
-        DirectX::XMMATRIX world;
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX proj;
-        DirectX::XMFLOAT4 color;
-        uint32_t useCustomColor;
-        uint32_t pads[3];
-    };
-
+    enum class Mode { SplitedTriangle, CylinderNoCap, CylinderNoCapWithNormal };
+    
 public:
     GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight);
     ~GameApp();
@@ -33,18 +21,21 @@ public:
     void DrawScene();
 
 private:
-    bool InitEffect();
     bool InitResource();
 
-private:
-    ComPtr<ID3D11InputLayout>   m_pVertexLayout;    // input layout
-    ComPtr<ID3D11Buffer>        m_pVertexBuffer;    // vertex buffer     
-    ComPtr<ID3D11Buffer>        m_pIndexBuffer;     // index buffer
-    ComPtr<ID3D11Buffer>        m_pConstantBuffer;  // index buffer
+    void ResetTriangle();
+    void ResetRoundWire();
 
-    ComPtr<ID3D11VertexShader>  m_pVertexShader;    // vertex shader
-    ComPtr<ID3D11PixelShader>   m_pPixelShader;     // fragment shader
-    ConstantBuffer              m_cBuffer;          // for GPU constant buffer modify
+
+
+private:
+
+    ComPtr<ID3D11Buffer> m_pVertexBuffer;						// 顶点集合
+    int m_VertexCount;										    // 顶点数目
+    Mode m_ShowMode;											// 当前显示模式
+
+    BasicEffect m_BasicEffect;							        // 对象渲染特效管理
+
 };
 
 

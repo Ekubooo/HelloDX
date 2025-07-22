@@ -1,32 +1,30 @@
 #include "GameApp.h"
 #include "d3dUtil.h"
 #include "DXTrace.h"
-#include "ImGuiConfig.h"
-
 using namespace DirectX;
 
-// static member init 
-// {SemanticName, SemanticIndex, Format, InputSlot, ByteOffset, SlotClass, ???}
-const D3D11_INPUT_ELEMENT_DESC GameApp::VertexPosColor::inputLayout[2] = 
-{   
-    {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0 , D3D11_INPUT_PER_VERTEX_DATA, 0},
-    {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0} 
-};  // init the layout of shader's structure, almost same as opengl's method
-
 GameApp::GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight)
-    : D3DApp(hInstance, windowName, initWidth, initHeight) { }
-
-GameApp::~GameApp() 
+    : D3DApp(hInstance, windowName, initWidth, initHeight),
+    m_ShowMode(Mode::SplitedTriangle),
+    m_VertexCount()
 {
+}
 
+GameApp::~GameApp()
+{
 }
 
 bool GameApp::Init()
 {
     if (!D3DApp::Init())
         return false;
-    if (!InitEffect())
+
+    // 务必先初始化所有渲染状态，以供下面的特效使用
+    RenderStates::InitAll(m_pd3dDevice.Get());
+
+    if (!m_BasicEffect.InitAll(m_pd3dDevice.Get()))
         return false;
+
     if (!InitResource())
         return false;
 
@@ -36,277 +34,218 @@ bool GameApp::Init()
 void GameApp::OnResize()
 {
     D3DApp::OnResize();
+
+    // 更新投影矩阵
+    m_BasicEffect.SetProjMatrix(XMMatrixPerspectiveFovLH(XM_PI / 3, AspectRatio(), 1.0f, 1000.0f));
 }
 
 void GameApp::UpdateScene(float dt)
 {
-    // imgui example component
-    // ImGui::ShowAboutWindow();
-    // ImGui::ShowDemoWindow();
-    // ImGui::ShowUserGuide(); 
-
-    // get IO event
-    ImGuiIO& io = ImGui::GetIO();
-
-    // custom window and operation
-    static float tx = 0.0f, ty = 0.0f, phi = 0.0f, 
-        theta = 0.0f, scale = 1.0f, fov = XM_PIDIV2;
-    static bool animateCube = true, customColor = false;
-    if (animateCube)
+    // 更新每帧变化的值
+    if (m_ShowMode == Mode::SplitedTriangle)
     {
-        phi += 0.3f * dt;
-        theta += 0.37f * dt;
-        phi = XMScalarModAngle(phi);
-        theta = XMScalarModAngle(theta);
+        m_BasicEffect.SetWorldMatrix(XMMatrixIdentity());
+    }
+    else
+    {
+        static float phi = 0.0f, theta = 0.0f;
+        phi += 0.2f * dt, theta += 0.3f * dt;
+        m_BasicEffect.SetWorldMatrix(XMMatrixRotationX(phi) * XMMatrixRotationY(theta));
     }
 
-    // imgui start  ///////////////////////////////
-    if (ImGui::Begin("Using ImGui"))
+    if (ImGui::Begin("Geometry Shader Beginning"))
     {
-        ImGui::Checkbox("animate cube", &animateCube);   // check box
-        // next component at 25 pxiel far in right side of same line
-        ImGui::SameLine(0.0f, 25.0f);   
-        if (ImGui::Button("reset params"))
+        static int curr_item = 0;
+        static const char* modes[] = {
+            "Splited Triangle",
+            "Cylinder w/o Cap"
+        };
+        if (ImGui::Combo("Mode", &curr_item, modes, ARRAYSIZE(modes)))
         {
-            tx = ty = phi = theta = 0.0f;
-            scale = 1.0f;
-            fov = XM_PIDIV2;
+            m_ShowMode = static_cast<Mode>(curr_item);
+            if (curr_item == 0)
+            {
+                ResetTriangle();
+                m_BasicEffect.SetRenderSplitedTriangle(m_pd3dImmediateContext.Get());
+            }
+            else
+            {
+                ResetRoundWire();
+                m_BasicEffect.SetRenderCylinderNoCap(m_pd3dImmediateContext.Get());
+            }
+
+            // 输入装配阶段的顶点缓冲区设置
+            UINT stride = curr_item ? sizeof(VertexPosNormalColor) : sizeof(VertexPosColor);		// 跨越字节数
+            UINT offset = 0;																		// 起始偏移量
+            m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
+
         }
-        ImGui::SliderFloat("Scale", &scale, 0.2f, 2.0f);
 
-        ImGui::Text("phi: %.2f degrees", XMConvertToDegrees(phi));
-        ImGui::SliderFloat("##1", &phi, -XM_PI, XM_PI, "");
-        ImGui::Text("theta: %.2f degrees", XMConvertToDegrees(theta));
-        ImGui::SliderFloat("##2", &theta, -XM_PI, XM_PI, "");
-
-        ImGui::Text("Position: (%.1f, %.1f, 0.0)", tx, ty);
-
-        ImGui::Text("FOV: %.2f degrees", XMConvertToDegrees(fov));
-        ImGui::SliderFloat("##3", &fov, XM_PIDIV4, XM_PI / 3 * 2, "");
-
-        if (ImGui::Checkbox("using custom color", &customColor))
+        if (curr_item == 1)
         {
-            m_cBuffer.useCustomColor = customColor;
-        }
-
-        if (customColor)
-        {
-            ImGui::ColorEdit3("Color", reinterpret_cast<float*>(&m_cBuffer.color));
+            static bool show_normal = false;
+            if (ImGui::Checkbox("Show Normal", &show_normal))
+            {
+                m_ShowMode = show_normal ? Mode::CylinderNoCapWithNormal : Mode::CylinderNoCap;
+            }
         }
     }
-
     ImGui::End();
-    // ImGui end ///////////////////////////////////
+    ImGui::Render();
 
-    // device control event ////////////////////////
-    if (!ImGui::IsAnyItemActive())
-    {
-        if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-        {   // mouse event moving (left click)
-            tx += io.MouseDelta.x * 0.01f;
-            ty -= io.MouseDelta.y * 0.01f;
-        }
-        
-        else if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
-        {   // mouse event rotating (right click)
-            phi -= io.MouseDelta.y * 0.01f;
-            theta -= io.MouseDelta.x * 0.01f;   
-        }
-        else if (io.MouseWheel != 0)
-        {
-            scale += 0.02 * io.MouseWheel;
-            if (scale > 2.0f) scale = 2.0f;
-            else if (scale < 0.2f) scale = 0.2f;
-        }     
-    }
-    // device control event end ////////////////////
-    
-    // update constant buffer
-    m_cBuffer.world = XMMatrixTranspose(
-        XMMatrixScalingFromVector(XMVectorReplicate(scale)) * 
-        XMMatrixRotationX(phi) * XMMatrixRotationY(theta) *
-        XMMatrixTranslation(tx, ty, 0.0f));
-    m_cBuffer.proj = XMMatrixTranspose
-        (XMMatrixPerspectiveFovLH(fov, AspectRatio(), 1.0f, 1000.0f));
-
-    // update constant buffer, let cube rotate!
-    D3D11_MAPPED_SUBRESOURCE mppedData;
-    HR(m_pd3dImmediateContext->Map(m_pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mppedData));
-    memcpy_s(mppedData.pData, sizeof(m_cBuffer), &m_cBuffer, sizeof(m_cBuffer));
-    m_pd3dImmediateContext->Unmap(m_pConstantBuffer.Get(), 0);
 }
 
 void GameApp::DrawScene()
 {
     assert(m_pd3dImmediateContext);
     assert(m_pSwapChain);
-    static float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };  
-    m_pd3dImmediateContext->ClearRenderTargetView
-        (m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&black));
-    m_pd3dImmediateContext->ClearDepthStencilView
-        (m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    // draw triangle
-    // m_pd3dImmediateContext->Draw(3, 0);
-    m_pd3dImmediateContext->DrawIndexed(36, 0, 0);
+    m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&Colors::Black));
+    m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    // imgui start-up
-    ImGui::Render();
+    // 应用常量缓冲区的变化
+    m_BasicEffect.Apply(m_pd3dImmediateContext.Get());
+    m_pd3dImmediateContext->Draw(m_VertexCount, 0);
+    // 绘制法向量，绘制完后记得归位
+    if (m_ShowMode == Mode::CylinderNoCapWithNormal)
+    {
+        m_BasicEffect.SetRenderNormal(m_pd3dImmediateContext.Get());
+        // 应用常量缓冲区的变化
+        m_BasicEffect.Apply(m_pd3dImmediateContext.Get());
+        m_pd3dImmediateContext->Draw(m_VertexCount, 0);
+        m_BasicEffect.SetRenderCylinderNoCap(m_pd3dImmediateContext.Get());
+    }
 
-    // imgui will trigger Direct3D Draw.
-    // need to bind backup_buffer on RP before here.
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     HR(m_pSwapChain->Present(0, 0));
 }
 
-bool GameApp::InitEffect()
-{
-    ComPtr<ID3DBlob> blob;  // ??
-    // create vertex shader
-    HR(CreateShaderFromFile(L"HLSL\\Cube_VS.cso", L"HLSL\\Cube_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
-    HR(m_pd3dDevice->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pVertexShader.GetAddressOf()));
 
-    // create and bind layout
-    HR(m_pd3dDevice->CreateInputLayout(VertexPosColor::inputLayout, ARRAYSIZE(VertexPosColor::inputLayout), 
-       blob->GetBufferPointer(), blob->GetBufferSize(), m_pVertexLayout.GetAddressOf()));
-
-    // create fragment/pixel shader 
-    HR(CreateShaderFromFile(L"HLSL\\Cube_PS.cso", L"HLSL\\Cube_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
-    HR(m_pd3dDevice->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, m_pPixelShader.GetAddressOf()));   
-    
-    return true;
-}
 
 bool GameApp::InitResource()
 {
-    // Three triangle verteices
-    // order in which the three vertices are given should be arranged clockwise
-    VertexPosColor triangleVertices[] = 
-    {
-        { XMFLOAT3(0.0f, 0.5f, 0.5f),   XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(0.5f, -0.5f, 0.5f),  XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(-0.5f, -0.5f, 0.5f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
-    };
+    // ******************
+    // 初始化对象
+    //
+
+    // 默认绘制三角形
+    ResetTriangle();
     
-    // VertexPosColor vertices[] =
+    // ******************
+    // 初始化不会变化的值
+    //
+
+    // 方向光
+    DirectionalLight dirLight;
+    dirLight.ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+    dirLight.diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+    dirLight.specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+    dirLight.direction = XMFLOAT3(-0.577f, -0.577f, 0.577f);
+    m_BasicEffect.SetDirLight(0, dirLight);
+    // 材质
+    Material material{};
+    material.ambient = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+    material.diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    material.specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 5.0f);
+    m_BasicEffect.SetMaterial(material);
+    // 摄像机位置
+    m_BasicEffect.SetEyePos(XMFLOAT3(0.0f, 0.0f, -5.0f));
+    // 矩阵
+    m_BasicEffect.SetWorldMatrix(XMMatrixIdentity());
+    m_BasicEffect.SetViewMatrix(XMMatrixLookAtLH(
+        XMVectorSet(0.0f, 0.0f, -5.0f, 1.0f),
+        XMVectorZero(),
+        XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)));
+    m_BasicEffect.SetProjMatrix(XMMatrixPerspectiveFovLH(XM_PI / 3, AspectRatio(), 1.0f, 1000.0f));
+    // 圆柱高度
+    m_BasicEffect.SetCylinderHeight(2.0f);
+
+
+
+
+    // 输入装配阶段的顶点缓冲区设置
+    UINT stride = sizeof(VertexPosColor);		// 跨越字节数
+    UINT offset = 0;							// 起始偏移量
+    m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
+    // 设置默认渲染状态
+    m_BasicEffect.SetRenderSplitedTriangle(m_pd3dImmediateContext.Get());
+
+
+    return true;
+}
+
+
+void GameApp::ResetTriangle()
+{
+    // ******************
+    // 初始化三角形
+    //
+
+    // 设置三角形顶点
     VertexPosColor vertices[] =
     {
-        { XMFLOAT3(-1.0f, -1.0f, -1.0f),XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(1.0f, 1.0f, -1.0f),  XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, 1.0f),  XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(1.0f, 1.0f, 1.0f),   XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
-        { XMFLOAT3(1.0f, -1.0f, 1.0f),  XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) }
+        { XMFLOAT3(-1.0f * 3, -0.866f * 3, 0.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { XMFLOAT3(0.0f * 3, 0.866f * 3, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { XMFLOAT3(1.0f * 3, -0.866f * 3, 0.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }
     };
-
-    // vertex buffer ////////////////////////////////////////
-    // INIT: vertex buffer description
+    // 设置顶点缓冲区描述
     D3D11_BUFFER_DESC vbd;
     ZeroMemory(&vbd, sizeof(vbd));
     vbd.Usage = D3D11_USAGE_IMMUTABLE;
     vbd.ByteWidth = sizeof vertices;
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vbd.CPUAccessFlags = 0;
-
-    // appoint init data
+    // 新建顶点缓冲区
     D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData,sizeof(InitData));
+    ZeroMemory(&InitData, sizeof(InitData));
     InitData.pSysMem = vertices;
+    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.ReleaseAndGetAddressOf()));
+    // 三角形顶点数
+    m_VertexCount = 3;
 
-    // CREATE: vertex buffer
-    // {Buffer description, SubResource, Buffer}
-    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.GetAddressOf()));
+    // 设置调试对象名
+    D3D11SetDebugObjectName(m_pVertexBuffer.Get(), "TriangleVertexBuffer");
+}
 
-    // index buffer /////////////////////////////////////////
-    DWORD indices[] = 
+void GameApp::ResetRoundWire()
+{
+    // ****************** 
+    // 初始化圆线
+    // 设置圆边上各顶点
+    // 必须要按顺时针设置
+    // 由于要形成闭环，起始点需要使用2次
+    //  ______
+    // /      \ 
+    // \______/
+    //
+
+    VertexPosNormalColor vertices[41];
+    for (int i = 0; i < 40; ++i)
     {
-        // front
-        0, 1, 2, 2, 3, 0,
-        // left 
-        4, 5, 1, 1, 0, 4,
-        // top 
-        1, 5, 6, 6, 2, 1,
-        // back 
-        7, 6, 5, 5, 4, 7,
-        // right 
-        3, 2, 6, 6, 7, 3,
-        // bottom 
-        4, 0, 3, 3, 7, 4
-    }; 
+        vertices[i].pos = XMFLOAT3(cosf(XM_PI / 20 * i), -1.0f, -sinf(XM_PI / 20 * i));
+        vertices[i].normal = XMFLOAT3(cosf(XM_PI / 20 * i), 0.0f, -sinf(XM_PI / 20 * i));
+        vertices[i].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+    vertices[40] = vertices[0];
 
-    // INIT: index buffer description 
-    D3D11_BUFFER_DESC ibd;  
-    ZeroMemory(&ibd, sizeof(ibd));
-    ibd.Usage = D3D11_USAGE_IMMUTABLE;
-    ibd.ByteWidth = sizeof indices;
-    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    ibd.CPUAccessFlags = 0;
+    // 设置顶点缓冲区描述
+    D3D11_BUFFER_DESC vbd;
+    ZeroMemory(&vbd, sizeof(vbd));
+    vbd.Usage = D3D11_USAGE_IMMUTABLE;
+    vbd.ByteWidth = sizeof vertices;
+    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vbd.CPUAccessFlags = 0;
+    // 新建顶点缓冲区
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory(&InitData, sizeof(InitData));
+    InitData.pSysMem = vertices;
+    HR(m_pd3dDevice->CreateBuffer(&vbd, &InitData, m_pVertexBuffer.ReleaseAndGetAddressOf()));
+    // 线框顶点数
+    m_VertexCount = 41;
 
-    // CREATE: index buffer
-    InitData.pSysMem = indices;
-    HR(m_pd3dDevice->CreateBuffer(&ibd, &InitData, m_pIndexBuffer.GetAddressOf()));
-    //input Assemble setting for index buffer
-    m_pd3dImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-    // constant buffer //////////////////////////////////////
-    // INIT: constant buffer description 
-    D3D11_BUFFER_DESC cbd;
-    ZeroMemory(&cbd, sizeof(cbd));
-    cbd.Usage = D3D11_USAGE_DYNAMIC;
-    cbd.ByteWidth = sizeof(ConstantBuffer);
-    cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    // CREATE: constant buffer without init data
-    HR(m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffer.GetAddressOf()));
-
-    // appoint constant buffer data 
-    m_cBuffer.world = XMMatrixIdentity();
-    m_cBuffer.view = XMMatrixTranspose(XMMatrixLookAtLH(
-        XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f),
-        XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-        XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)));
-    m_cBuffer.proj = XMMatrixTranspose(
-        XMMatrixPerspectiveFovLH(XM_PIDIV2, AspectRatio(), 1.0f, 1000.0f));
-
-    m_cBuffer.color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_cBuffer.useCustomColor = false;
-
-    // TODO: here   //?
-
-    // input Assemble //////////////////////////////////////
-    // setting vertex buffer 
-    UINT stride = sizeof(VertexPosColor);
-    UINT offset = 0;
-    m_pd3dImmediateContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
-
-    // setting the Primitive type and input layout
-    m_pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_pd3dImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
-
-    // bind shader to RP
-    m_pd3dImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-        // bind the constant buffer that already update to the VS (and PS!)
-    m_pd3dImmediateContext->VSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
-    m_pd3dImmediateContext->PSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
-
-    m_pd3dImmediateContext->PSSetShader(m_pPixelShader.Get() , nullptr, 0);
-
-    // setting debug object name 
-    D3D11SetDebugObjectName(m_pVertexLayout.Get(), "VertexPosColorLayout");
-    D3D11SetDebugObjectName(m_pVertexBuffer.Get(), "VertexBuffer");
-    D3D11SetDebugObjectName(m_pVertexShader.Get(), "Trangle_VS");
-    D3D11SetDebugObjectName(m_pPixelShader.Get(), "Trangle_PS");
-
-    D3D11SetDebugObjectName(m_pIndexBuffer.Get(), "IndexBuffer");
-    D3D11SetDebugObjectName(m_pConstantBuffer.Get(), "ConstantBuffer");
-    D3D11SetDebugObjectName(m_pVertexShader.Get(), "Cube_VS");
-    D3D11SetDebugObjectName(m_pPixelShader.Get(), "Cube_PS");
-
-    return true;
+    // 设置调试对象名
+    D3D11SetDebugObjectName(m_pVertexBuffer.Get(), "CylinderVertexBuffer");
 }
 
 
