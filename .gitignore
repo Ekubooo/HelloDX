@@ -13,14 +13,17 @@ build/
 
 nil/
 
-RECORD/
+Record/
 
-TEXTURE/
+Texture/
 
 Model/
 
+Assets/
+
 assimp/
 
+# Build
 Debug/
 Release/
 x64/
@@ -35,6 +38,7 @@ vsxmake2022/
 **.gif
 **.png
 **.jpg
+**.txt
 
 **.cso
 **.mbo

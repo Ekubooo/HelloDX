@@ -1,3 +1,12 @@
+set_project("YUTAKA_DX")
+set_xmakever("2.9.0")
+
+option("WIN7_SYSTEM_SUPPORT")
+    set_default(false)
+    set_description("Windows7 users need to select this option!")
+option_end()
+
+
 add_rules("mode.debug", "mode.release")
 set_defaultmode("debug")
 set_toolchains("msvc")
@@ -22,31 +31,4 @@ includes("ImGui")
 -- Assimp
 add_requires("assimp",{system = false })
 
--- ////////////////
-targetName = "HelloDX"
-target(targetName)
-    set_kind("binary")
-    set_targetdir(path.join(binDir,targetName))
-    set_rundir("$(projectdir)")
-    add_packages("assimp")
-    add_dx_sdk_options()
-    add_deps("ImGui")
-    add_includedirs("src/")
-    add_includedirs("src/Component")
-    add_includedirs("src/Framework")
-    add_includedirs("src/Loader")
-    add_includedirs("src/RP")
-    add_headerfiles("**.h")
-    add_files("**.cpp")    
-
-    -- Shader
-    add_rules("hlsl_shader_complier")
-    add_headerfiles("Shaders/**.hlsl|Shaders/**.hlsli")
-    add_headerfiles("Shaders/**/**.hlsl|Shaders/**/**.hlsli")
-    add_files("Shaders/**.hlsl|Shaders/**.hlsli")
-    add_files("Shaders/**/**.hlsl|Shaders/**/**.hlsli")
-    -- assert
-    add_rules("asset_file")
-
-target_end()
--- ////////////////
+includes("Project")

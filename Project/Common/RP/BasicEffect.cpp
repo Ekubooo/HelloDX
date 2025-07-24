@@ -95,7 +95,7 @@ bool BasicEffect::InitAll(ID3D11Device* device)
     Microsoft::WRL::ComPtr<ID3DBlob> blob;
     // 创建顶点着色器
     std::cout<<"read vs"<<std::endl;
-    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicVS", L"Shader\\House\\Basic_VS.cso", device,
+    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicVS", L"Shaders/House/Basic_VS.cso", device,
         nullptr, nullptr, nullptr, blob.GetAddressOf());
     std::cout<<"vs success"<<std::endl;
     // 创建顶点布局
@@ -105,7 +105,7 @@ bool BasicEffect::InitAll(ID3D11Device* device)
     std::cout<<"ps success"<<std::endl;
 
     // 创建像素着色器
-    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicPS", L"Shader\\House\\Basic_PS.cso", device);
+    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicPS", L"Shaders/House/Basic_PS.cso", device);
 
     
     // 创建通道

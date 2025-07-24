@@ -126,11 +126,11 @@ bool GameApp::InitResource()
 {
     // GameObject Init /////////////////////////////////////////////
         // ground
-    Model* pModel = m_ModelManager.CreateFromFile("Model\\ground_19.obj");
+    Model* pModel = m_ModelManager.CreateFromFile("..\\Assets\\Model\\ground_19.obj");
     m_Ground.SetModel(pModel);
     pModel->SetDebugObjectName("ground_19");
         // house
-    pModel = m_ModelManager.CreateFromFile("Model\\house.obj");
+    pModel = m_ModelManager.CreateFromFile("..\\Assets\\Model\\house.obj");
     m_House.SetModel(pModel);
     pModel->SetDebugObjectName("house");
 
