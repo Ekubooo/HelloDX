@@ -7,6 +7,9 @@
 #include <TextureManager.h>
 #include "LightHelper.h"
 
+#include <iostream>
+
+
 using namespace DirectX;
 
 # pragma warning(disable: 26812)
@@ -91,14 +94,18 @@ bool BasicEffect::InitAll(ID3D11Device* device)
 
     Microsoft::WRL::ComPtr<ID3DBlob> blob;
     // 创建顶点着色器
-    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicVS", L"Shaders/Basic_VS.cso", device,
+    std::cout<<"read vs"<<std::endl;
+    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicVS", L"Shader\\House\\Basic_VS.cso", device,
         nullptr, nullptr, nullptr, blob.GetAddressOf());
+    std::cout<<"vs success"<<std::endl;
     // 创建顶点布局
+    std::cout<<"read ps"<<std::endl;
     HR(device->CreateInputLayout(VertexPosNormalTex::GetInputLayout(), ARRAYSIZE(VertexPosNormalTex::GetInputLayout()),
         blob->GetBufferPointer(), blob->GetBufferSize(), pImpl->m_pVertexPosNormalTexLayout.GetAddressOf()));
+    std::cout<<"ps success"<<std::endl;
 
     // 创建像素着色器
-    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicPS", L"Shaders/Basic_PS.cso", device);
+    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicPS", L"Shader\\House\\Basic_PS.cso", device);
 
     
     // 创建通道

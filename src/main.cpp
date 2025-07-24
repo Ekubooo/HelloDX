@@ -1,8 +1,10 @@
 #include "GameApp.h"
+#include <iostream>
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE prevInstance,
     _In_ LPSTR cmdLine, _In_ int showCmd)
 {
+    std::cout<<"Start"<<std::endl;
     // discard these paramart
     UNREFERENCED_PARAMETER(prevInstance);
     UNREFERENCED_PARAMETER(cmdLine);

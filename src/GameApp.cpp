@@ -2,6 +2,7 @@
 #include <XUtil.h>
 #include <DXTrace.h>
 
+#include <iostream>
 using namespace DirectX;
 
 GameApp::GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight)
@@ -13,19 +14,31 @@ GameApp::~GameApp()
 
 bool GameApp::Init()
 {
+    std::cout<<"D3Dapp init start"<<std::endl;
     if (!D3DApp::Init())
         return false;
+    std::cout<<"D3Dapp init success"<<std::endl;
 
     m_TextureManager.Init(m_pd3dDevice.Get());
+    std::cout<<"texture init success"<<std::endl;
+
     m_ModelManager.Init(m_pd3dDevice.Get());
+    std::cout<<"Model init success"<<std::endl;
+
 
     RenderStates::InitAll(m_pd3dDevice.Get()); 
+    std::cout<<"RS init success"<<std::endl;
+
 
     if (!m_BasicEffect.InitAll(m_pd3dDevice.Get()))
         return false;
 
+    std::cout<<"Basic Effect init success"<<std::endl;
+
     if (!InitResource())
         return false;
+
+    std::cout<<"InitResource success"<<std::endl;
 
     return true;
 }
@@ -89,7 +102,9 @@ void GameApp::DrawScene()
     }
 
     float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_pd3dImmediateContext->ClearRenderTargetView(GetBackBufferRTV(), black);
+    float skyblue[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
+    // m_pd3dImmediateContext->ClearRenderTargetView(GetBackBufferRTV(), reinterpret_cast<const float*>(&Colors::SkyBlue));
+    m_pd3dImmediateContext->ClearRenderTargetView(GetBackBufferRTV(), skyblue);
     m_pd3dImmediateContext->ClearDepthStencilView
         (m_pDepthTexture->GetDepthStencil(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     ID3D11RenderTargetView* pRTVs[1] = { GetBackBufferRTV() };

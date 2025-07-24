@@ -40,7 +40,7 @@ private:
     GameObject m_Ground;
 
     // camera
-    std::shared_ptr<Camera> m_pCamera;
+    std::shared_ptr<ThirdPersonCamera> m_pCamera;
 
 };
 
