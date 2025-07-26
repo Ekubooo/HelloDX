@@ -27,28 +27,24 @@ public:
 
 private:
     bool InitResource();
-
+    
 private:
+
     TextureManager m_TextureManager;
     ModelManager m_ModelManager;
 
     BasicEffect m_BasicEffect;
     SkyboxEffect m_SkyboxEffect;
 
-    // depth buffer
     std::unique_ptr<Depth2D> m_pDepthTexture;
-
-    // GameObject
 
     GameObject m_Sphere;
     GameObject m_Ground;
     GameObject m_Cylinder;
     GameObject m_Skybox;
 
-    // camera
     std::shared_ptr<FirstPersonCamera> m_pCamera;
-    FirstPersonCameraController m_CameraController;            
-
+    FirstPersonCameraController m_CameraController;
 };
 
 

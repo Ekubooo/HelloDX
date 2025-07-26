@@ -92,14 +92,14 @@ bool SkyboxEffect::InitAll(ID3D11Device* device)
 
 
     // 创建顶点着色器
-    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("SkyboxVS", L"Shaders\\SkyBox\\Skybox_VS.cso",
+    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("SkyboxVS", L"Shaders/SkyBox/Skybox_VS.cso",
         device, "VS", "vs_5_0", nullptr, blob.GetAddressOf()));
     // 创建顶点布局
     HR(device->CreateInputLayout(VertexPos::GetInputLayout(), ARRAYSIZE(VertexPos::GetInputLayout()),
         blob->GetBufferPointer(), blob->GetBufferSize(), pImpl->m_pVertexPosLayout.ReleaseAndGetAddressOf()));
 
     // 创建像素着色器
-    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("SkyboxPS", L"Shaders\\SkyBox\\Skybox_PS.cso", device));
+    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("SkyboxPS", L"Shaders/SkyBox/Skybox_PS.cso", device));
 
     // 创建通道
     EffectPassDesc passDesc;

@@ -2,7 +2,6 @@
 #include <XUtil.h>
 #include <DXTrace.h>
 
-#include <iostream>
 using namespace DirectX;
 
 GameApp::GameApp(HINSTANCE hInstance, const std::wstring& windowName, int initWidth, int initHeight)
@@ -97,7 +96,7 @@ void GameApp::UpdateScene(float dt)
 void GameApp::DrawScene()
 {
     // CREATE Backup Buffer of Render target view
-     if (m_FrameCount < m_BackBufferCount)
+    if (m_FrameCount < m_BackBufferCount)
     {
         ComPtr<ID3D11Texture2D> pBackBuffer;
         m_pSwapChain->GetBuffer(0, IID_PPV_ARGS(pBackBuffer.GetAddressOf()));
