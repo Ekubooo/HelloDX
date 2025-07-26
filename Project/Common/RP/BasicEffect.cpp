@@ -5,10 +5,8 @@
 #include <DXTrace.h>
 #include <Vertex.h>
 #include <TextureManager.h>
+#include <ModelManager.h>
 #include "LightHelper.h"
-
-#include <iostream>
-
 
 using namespace DirectX;
 
@@ -32,11 +30,11 @@ public:
 
     std::unique_ptr<EffectHelper> m_pEffectHelper;
 
-    ComPtr<ID3D11InputLayout> m_pVertexPosNormalTexLayout;
-
     std::shared_ptr<IEffectPass> m_pCurrEffectPass;
     ComPtr<ID3D11InputLayout> m_pCurrInputLayout;
     D3D11_PRIMITIVE_TOPOLOGY m_CurrTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+    ComPtr<ID3D11InputLayout> m_pVertexPosNormalTexLayout;
 
     XMFLOAT4X4 m_World{}, m_View{}, m_Proj{};
 };
@@ -93,26 +91,25 @@ bool BasicEffect::InitAll(ID3D11Device* device)
     pImpl->m_pEffectHelper = std::make_unique<EffectHelper>();
 
     Microsoft::WRL::ComPtr<ID3DBlob> blob;
+
     // 创建顶点着色器
-    std::cout<<"read vs"<<std::endl;
-    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicVS", L"Shaders/House/Basic_VS.cso", device,
-        nullptr, nullptr, nullptr, blob.GetAddressOf());
-    std::cout<<"vs success"<<std::endl;
+    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicVS", L"Shaders/SkyBox/Basic_VS.cso", device,
+        "VS", "vs_5_0", nullptr, blob.GetAddressOf());
     // 创建顶点布局
-    std::cout<<"read ps"<<std::endl;
     HR(device->CreateInputLayout(VertexPosNormalTex::GetInputLayout(), ARRAYSIZE(VertexPosNormalTex::GetInputLayout()),
         blob->GetBufferPointer(), blob->GetBufferSize(), pImpl->m_pVertexPosNormalTexLayout.GetAddressOf()));
-    std::cout<<"ps success"<<std::endl;
 
     // 创建像素着色器
-    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicPS", L"Shaders/House/Basic_PS.cso", device);
+    pImpl->m_pEffectHelper->CreateShaderFromFile("BasicPS", L"Shaders/SkyBox/Basic_PS.cso", device,
+        "PS", "ps_5_0");
 
-    
+
     // 创建通道
     EffectPassDesc passDesc;
     passDesc.nameVS = "BasicVS";
     passDesc.namePS = "BasicPS";
     HR(pImpl->m_pEffectHelper->AddEffectPass("Basic", device, &passDesc));
+
 
     pImpl->m_pEffectHelper->SetSamplerStateByName("g_Sam", RenderStates::SSLinearWrap.Get());
 
@@ -150,6 +147,7 @@ void BasicEffect::SetMaterial(const Material& material)
     phongMat.diffuse.w = material.Get<float>("$Opacity");
     phongMat.specular = material.Get<XMFLOAT4>("$SpecularColor");
     phongMat.specular.w = material.Has<float>("$SpecularFactor") ? material.Get<float>("$SpecularFactor") : 1.0f;
+    phongMat.reflect = material.Get<XMFLOAT4>("$ReflectColor");
     pImpl->m_pEffectHelper->GetConstantBufferVariable("g_Material")->SetRaw(&phongMat);
 
     auto pStr = material.TryGet<std::string>("$Diffuse");
@@ -161,11 +159,11 @@ MeshDataInput BasicEffect::GetInputData(const MeshData& meshData)
     MeshDataInput input;
     input.pInputLayout = pImpl->m_pCurrInputLayout.Get();
     input.topology = pImpl->m_CurrTopology;
-
     input.pVertexBuffers = {
         meshData.m_pVertices.Get(),
         meshData.m_pNormals.Get(),
-        meshData.m_pTexcoordArrays.empty() ? nullptr : meshData.m_pTexcoordArrays[0].Get()
+        meshData.m_pTexcoordArrays.empty() ? nullptr : meshData.m_pTexcoordArrays[0].Get(),
+        nullptr
     };
     input.strides = { 12, 12, 8 };
     input.offsets = { 0, 0, 0 };
@@ -196,11 +194,21 @@ void BasicEffect::SetEyePos(const DirectX::XMFLOAT3& eyePos)
     pImpl->m_pEffectHelper->GetConstantBufferVariable("g_EyePosW")->SetFloatVector(3, reinterpret_cast<const float*>(&eyePos));
 }
 
+void BasicEffect::SetReflectionEnabled(bool enabled)
+{
+    pImpl->m_pEffectHelper->GetConstantBufferVariable("g_ReflectionEnabled")->SetSInt(enabled);
+}
+
 void BasicEffect::SetRenderDefault()
 {
     pImpl->m_pCurrEffectPass = pImpl->m_pEffectHelper->GetEffectPass("Basic");
     pImpl->m_pCurrInputLayout = pImpl->m_pVertexPosNormalTexLayout;
     pImpl->m_CurrTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+}
+
+void BasicEffect::SetTextureCube(ID3D11ShaderResourceView* textureCube)
+{
+    pImpl->m_pEffectHelper->SetShaderResourceByName("g_TexCube", textureCube);
 }
 
 void BasicEffect::Apply(ID3D11DeviceContext* deviceContext)
@@ -223,5 +231,4 @@ void BasicEffect::Apply(ID3D11DeviceContext* deviceContext)
     if (pImpl->m_pCurrEffectPass)
         pImpl->m_pCurrEffectPass->Apply(deviceContext);
 }
-
 
