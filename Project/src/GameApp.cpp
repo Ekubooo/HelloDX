@@ -53,15 +53,42 @@ void GameApp::OnResize()
 
 void GameApp::UpdateScene(float dt)
 {
-    m_CameraController.Update(dt);
+    ImVec2 mousePos = ImGui::GetMousePos();
+    ImGuiIO& io = ImGui::GetIO();
+    static int mouseStatus = 0;
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        if (mousePos.x >= m_DebugTextureXY.x && mousePos.x < m_DebugTextureXY.x + m_DebugTextureWH.x &&
+            mousePos.y >= m_DebugTextureXY.y && mousePos.y < m_DebugTextureXY.y + m_DebugTextureWH.y)
+            mouseStatus = 1;
+        else
+            mouseStatus = 0;
+    }
     
+    if (mouseStatus == 1)
+    {
+        float yaw = 0.0f, pitch = 0.0f;
+        if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+        {
+            
+            yaw += io.MouseDelta.x * 0.015f;
+            pitch += io.MouseDelta.y * 0.015f;
+        }
+        m_pDebugCamera->RotateY(yaw);
+        m_pDebugCamera->Pitch(pitch);
+    }
+    else
+    {
+        m_CameraController.Update(dt);
+    }
+    
+
     // update view matrix
     m_BasicEffect.SetViewMatrix(m_pCamera->GetViewMatrixXM());
-    m_BasicEffect.SetEyePos(m_pCamera->GetPosition());
 
     m_SkyboxEffect.SetViewMatrix(m_pCamera->GetViewMatrixXM());
 
-    if (ImGui::Begin("Static Cube Mapping"))
+    if (ImGui::Begin("Dymamic Cube Mapping"))
     {
         static int skybox_item = 0;
         static const char* skybox_strs[] = {
@@ -74,28 +101,56 @@ void GameApp::UpdateScene(float dt)
             Model* pModel = m_ModelManager.GetModel("Skybox");
             switch (skybox_item)
             {
-            case 0: 
+            case 0:
                 m_BasicEffect.SetTextureCube(m_TextureManager.GetTexture("Daylight"));
                 pModel->materials[0].Set<std::string>("$Skybox", "Daylight");
                 break;
-            case 1: 
+            case 1:
                 m_BasicEffect.SetTextureCube(m_TextureManager.GetTexture("Sunset"));
                 pModel->materials[0].Set<std::string>("$Skybox", "Sunset");
                 break;
-            case 2: 
-                m_BasicEffect.SetTextureCube(m_TextureManager.GetTexture("Desert")); 
+            case 2:
+                m_BasicEffect.SetTextureCube(m_TextureManager.GetTexture("Desert"));
                 pModel->materials[0].Set<std::string>("$Skybox", "Desert");
                 break;
             }
         }
+
+        static int sphere_item = static_cast<int>(m_SphereMode);
+        static const char* sphere_modes[] = {
+            "None",
+            "Reflection",
+            "Refraction"
+        };
+        if (ImGui::Combo("Sphere Mode", &sphere_item, sphere_modes, ARRAYSIZE(sphere_modes)))
+        {
+            m_SphereMode = static_cast<SphereMode>(sphere_item);
+        }
+        if (sphere_item == 2)
+        {
+            if (ImGui::SliderFloat("Eta", &m_Eta, 0.2f, 1.0f))
+            {
+                m_BasicEffect.SetRefractionEta(m_Eta);
+            }
+        }
     }
     ImGui::End();
-    ImGui::Render();
+    
+    // sphere animation
+    m_SphereRad += 2.0f * dt;
+    for (size_t i = 0; i < 4; ++i)
+    {
+        auto& transform = m_Spheres[i].GetTransform();
+        auto pos = transform.GetPosition();
+        pos.y = 0.5f * std::sin(m_SphereRad);
+        transform.SetPosition(pos);
+    }
+    m_Spheres[4].GetTransform().RotateAround(XMFLOAT3(), XMFLOAT3(0.0f, 1.0f, 0.0f), 2.0f * dt);
 }
 
 void GameApp::DrawScene()
 {
-    // CREATE Backup Buffer of Render target view
+    // render target view of backup buffer
     if (m_FrameCount < m_BackBufferCount)
     {
         ComPtr<ID3D11Texture2D> pBackBuffer;
@@ -104,29 +159,92 @@ void GameApp::DrawScene()
         m_pd3dDevice->CreateRenderTargetView(pBackBuffer.Get(), &rtvDesc, m_pRenderTargetViews[m_FrameCount].ReleaseAndGetAddressOf());
     }
 
-    float skyblue[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
-    m_pd3dImmediateContext->ClearRenderTargetView(GetBackBufferRTV(), skyblue);
-    m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthTexture->GetDepthStencil(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    ID3D11RenderTargetView* pRTVs[1] = { GetBackBufferRTV() };
-    m_pd3dImmediateContext->OMSetRenderTargets(1, pRTVs, m_pDepthTexture->GetDepthStencil());
-    D3D11_VIEWPORT viewport = m_pCamera->GetViewPort();
-    m_pd3dImmediateContext->RSSetViewports(1, &viewport);
+    // CREATE: Dynamic skybox
 
-    // draw model
-    m_BasicEffect.SetRenderDefault();
-    m_BasicEffect.SetReflectionEnabled(true);
-    m_Sphere.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+    static XMFLOAT3 ups[6] = {
+        { 0.0f, 1.0f, 0.0f },	// +X
+        { 0.0f, 1.0f, 0.0f },   // -X
+        { 0.0f, 0.0f, -1.0f },  // +Y
+        { 0.0f, 0.0f, 1.0f },   // -Y
+        { 0.0f, 1.0f, 0.0f },   // +Z
+        { 0.0f, 1.0f, 0.0f }    // -Z
+    };
 
-    m_BasicEffect.SetReflectionEnabled(false);
-    m_Ground.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
-    m_Cylinder.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+    static XMFLOAT3 looks[6] = {
+        { 1.0f, 0.0f, 0.0f },	// +X
+        { -1.0f, 0.0f, 0.0f },  // -X
+        { 0.0f, 1.0f, 0.0f },	// +Y
+        { 0.0f, -1.0f, 0.0f },  // -Y
+        { 0.0f, 0.0f, 1.0f },	// +Z
+        { 0.0f, 0.0f, -1.0f },  // -Z
+    };
 
+    BoundingFrustum frustum;
+    BoundingFrustum::CreateFromMatrix(frustum, m_pCamera->GetProjMatrixXM());
+    frustum.Transform(frustum, m_pCamera->GetLocalToWorldMatrixXM());
 
+    // culling 
+    m_CenterSphere.FrustumCulling(frustum);
+    m_BasicEffect.SetEyePos(m_CenterSphere.GetTransform().GetPosition());
+    if (m_CenterSphere.InFrustum())
+    {
+        // draw 6 face of skybox
+        for (int i = 0; i < 6; ++i)
+        {
+            m_pCubeCamera->LookTo(m_CenterSphere.GetTransform().GetPosition(), looks[i], ups[i]);
+
+            // cull center sphere
+            DrawScene(false, *m_pCubeCamera, m_pDynamicTextureCube->GetRenderTarget(i), m_pDynamicCubeDepthTexture->GetDepthStencil());
+        }
+    }
+    
+    // draw scene
+
+    DrawScene(true, *m_pCamera, GetBackBufferRTV(), m_pDepthTexture->GetDepthStencil());
+    
     // draw skybox
-    m_SkyboxEffect.SetRenderDefault();
-    m_Skybox.Draw(m_pd3dImmediateContext.Get(), m_SkyboxEffect);
+    static bool debugCube = false;
+    if (ImGui::Begin("Dymamic Cube Mapping"))
+    {
+        ImGui::Checkbox("Debug Cube", &debugCube);
+    }
+    ImGui::End();
+
+    m_DebugTextureXY = {};
+    m_DebugTextureWH = {};
+    if (debugCube)
+    {
+        if (ImGui::Begin("Debug"))
+        {
+            D3D11_VIEWPORT viewport = m_pDebugCamera->GetViewPort();
+            ID3D11RenderTargetView* pRTVs[] { m_pDebugDynamicCubeTexture->GetRenderTarget() };
+            m_pd3dImmediateContext->RSSetViewports(1, &viewport);
+            m_pd3dImmediateContext->OMSetRenderTargets(1, pRTVs, nullptr);
+            m_SkyboxEffect.SetRenderDefault();
+            m_SkyboxEffect.SetViewMatrix(m_pDebugCamera->GetViewMatrixXM());
+            m_SkyboxEffect.SetProjMatrix(m_pDebugCamera->GetProjMatrixXM());
+            m_DebugSkybox.Draw(m_pd3dImmediateContext.Get(), m_SkyboxEffect);
+            // clear after draw
+            ID3D11ShaderResourceView* nullSRVs[3]{};
+            m_pd3dImmediateContext->PSSetShaderResources(0, 3, nullSRVs);
+            // restore
+            viewport = m_pCamera->GetViewPort();
+            pRTVs[0] = GetBackBufferRTV();
+            m_pd3dImmediateContext->RSSetViewports(1, &viewport);
+            m_pd3dImmediateContext->OMSetRenderTargets(1, pRTVs, nullptr);
+
+            ImVec2 winSize = ImGui::GetWindowSize();
+            float smaller = (std::min)(winSize.x - 20, winSize.y - 36);
+            ImGui::Image(m_pDebugDynamicCubeTexture->GetShaderResource(), ImVec2(smaller, smaller));
+            m_DebugTextureXY = ImGui::GetItemRectMin();
+            m_DebugTextureWH = { smaller, smaller };
+        }
+        ImGui::End();
+    }
+    ImGui::Render();
 
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
     HR(m_pSwapChain->Present(0, m_IsDxgiFlipModel ? DXGI_PRESENT_ALLOW_TEARING : 0));
 
 }
@@ -134,7 +252,6 @@ void GameApp::DrawScene()
 bool GameApp::InitResource()
 {
     // Resource Init ///////////////////////////////////////////////
-
         // skybox
     ComPtr<ID3D11Texture2D> pTex;
     D3D11_TEXTURE2D_DESC texDesc;
@@ -146,8 +263,8 @@ bool GameApp::InitResource()
         filenameStr = "..\\Assets\\Texture\\daylight0.png";
         for (size_t i = 0; i < 6; ++i)
         {
-            filenameStr[19] = '0' + (char)i;
-            pCubeTextures.push_back(m_TextureManager.CreateFromFile(filenameStr));
+            filenameStr[26] = '0' + (char)i;
+            pCubeTextures.push_back(m_TextureManager.CreateFromFile(filenameStr, false, true));
         }
 
         pCubeTextures[0]->GetResource(reinterpret_cast<ID3D11Resource**>(pTex.ReleaseAndGetAddressOf()));
@@ -168,8 +285,8 @@ bool GameApp::InitResource()
         pCubeTextures.clear();
         for (size_t i = 0; i < 6; ++i)
         {
-            filenameStr[17] = '0' + (char)i;
-            pCubeTextures.push_back(m_TextureManager.CreateFromFile(filenameStr));
+            filenameStr[24] = '0' + (char)i;
+            pCubeTextures.push_back(m_TextureManager.CreateFromFile(filenameStr, false, true));
         }
         pCubeTextures[0]->GetResource(reinterpret_cast<ID3D11Resource**>(pTex.ReleaseAndGetAddressOf()));
         pTex->GetDesc(&texDesc);
@@ -183,11 +300,18 @@ bool GameApp::InitResource()
         m_TextureManager.AddTexture("Sunset", pTexCube->GetShaderResource());
     }
     
-    // Desert
+        // Desert
     m_TextureManager.AddTexture("Desert", m_TextureManager.CreateFromFile("..\\Assets\\Texture\\desertcube1024.dds", false, true));
 
-    m_BasicEffect.SetTextureCube(m_TextureManager.GetTexture("Daylight"));
+        // dynamic skybox
+    m_pDynamicTextureCube = std::make_unique<TextureCube>(m_pd3dDevice.Get(), 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM);
+    m_pDynamicCubeDepthTexture = std::make_unique<Depth2D>(m_pd3dDevice.Get(), 256, 256);
+    m_pDebugDynamicCubeTexture = std::make_unique<Texture2D>(m_pd3dDevice.Get(), 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM);
+    m_TextureManager.AddTexture("DynamicCube", m_pDynamicTextureCube->GetShaderResource());
 
+    m_pDynamicTextureCube->SetDebugObjectName("DynamicTextureCube");
+    m_pDynamicCubeDepthTexture->SetDebugObjectName("DynamicCubeDepthTexture");
+    m_pDebugDynamicCubeTexture->SetDebugObjectName("DebugDynamicCube");
     
     // GameObject Init /////////////////////////////////////////////
         // Sphere
@@ -201,7 +325,21 @@ bool GameApp::InitResource()
         pModel->materials[0].Set<XMFLOAT4>("$SpecularColor", XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f));
         pModel->materials[0].Set<float>("$SpecularPower", 16.0f);
         pModel->materials[0].Set<XMFLOAT4>("$ReflectColor", XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f));
-        m_Sphere.SetModel(pModel);
+
+        Transform sphereTransforms[] = {
+        Transform(XMFLOAT3(0.5f, 0.5f, 0.5f), XMFLOAT3(), XMFLOAT3(4.5f, 0.0f, 4.5f)),
+        Transform(XMFLOAT3(0.5f, 0.5f, 0.5f), XMFLOAT3(), XMFLOAT3(-4.5f, 0.0f, 4.5f)),
+        Transform(XMFLOAT3(0.5f, 0.5f, 0.5f), XMFLOAT3(), XMFLOAT3(-4.5f, 0.0f, -4.5f)),
+        Transform(XMFLOAT3(0.5f, 0.5f, 0.5f), XMFLOAT3(), XMFLOAT3(4.5f, 0.0f, -4.5f)),
+        Transform(XMFLOAT3(0.5f, 0.5f, 0.5f), XMFLOAT3(), XMFLOAT3(2.5f, 0.0f, 0.0f)),
+        };
+
+        for (size_t i = 0; i < 5; ++i)
+        {
+            m_Spheres[i].GetTransform() = sphereTransforms[i];
+            m_Spheres[i].SetModel(pModel);
+        }
+        m_CenterSphere.SetModel(pModel);
     }
     
         // ground
@@ -230,8 +368,23 @@ bool GameApp::InitResource()
         pModel->materials[0].Set<XMFLOAT4>("$SpecularColor", XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f));
         pModel->materials[0].Set<float>("$SpecularPower", 16.0f);
         pModel->materials[0].Set<XMFLOAT4>("$ReflectColor", XMFLOAT4());
-        m_Cylinder.SetModel(pModel);
-        m_Cylinder.GetTransform().SetPosition(0.0f, -1.99f, 0.0f);
+
+        // 需要固定位置
+        Transform cylinderTransforms[] = 
+        {
+            Transform(XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(), XMFLOAT3(0.0f, -1.99f, 0.0f)),
+            Transform(XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(), XMFLOAT3(4.5f, -1.99f, 4.5f)),
+            Transform(XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(), XMFLOAT3(-4.5f, -1.99f, 4.5f)),
+            Transform(XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(), XMFLOAT3(-4.5f, -1.99f, -4.5f)),
+            Transform(XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(), XMFLOAT3(4.5f, -1.99f, -4.5f)),
+        };
+
+        for (size_t i = 0; i < 5; ++i)
+        {
+            m_Cylinders[i].SetModel(pModel);
+            m_Cylinders[i].GetTransform() = cylinderTransforms[i];
+        }
+
     }
 
         // skybox cube
@@ -239,20 +392,27 @@ bool GameApp::InitResource()
     pModel->SetDebugObjectName("Skybox");
     pModel->materials[0].Set<std::string>("$Skybox", "Daylight");
     m_Skybox.SetModel(pModel);
+        // for debug 
+    pModel = m_ModelManager.CreateFromGeometry("DebugSkybox", Geometry::CreateBox());
+    pModel->SetDebugObjectName("DebugSkybox");
+    pModel->materials[0].Set<std::string>("$Skybox", "DynamicCube");
+    m_DebugSkybox.SetModel(pModel);
 
  
     // camera //////////////////////////////////////////////////////
-    auto camera = std::make_shared<FirstPersonCamera>();
-    m_pCamera = camera;
-    m_CameraController.InitCamera(camera.get());
-    camera->SetViewPort(0.0f, 0.0f, (float)m_ClientWidth, (float)m_ClientHeight);
-    camera->SetFrustum(XM_PI / 3, AspectRatio(), 1.0f, 1000.0f);
-    camera->LookTo(XMFLOAT3(0.0f, 0.0f, -10.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f));
+    m_pCamera = std::make_shared<FirstPersonCamera>();
+    m_CameraController.InitCamera(m_pCamera.get());
+    m_pCamera->SetViewPort(0.0f, 0.0f, (float)m_ClientWidth, (float)m_ClientHeight);
+    m_pCamera->SetFrustum(XM_PI / 3, AspectRatio(), 1.0f, 1000.0f);
+    m_pCamera->LookTo(XMFLOAT3(0.0f, 0.0f, -10.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f));
 
-    m_BasicEffect.SetViewMatrix(camera->GetViewMatrixXM());
-    m_BasicEffect.SetProjMatrix(camera->GetProjMatrixXM());
-    m_SkyboxEffect.SetViewMatrix(camera->GetViewMatrixXM());
-    m_SkyboxEffect.SetProjMatrix(camera->GetProjMatrixXM());
+    m_pCubeCamera = std::make_shared<FirstPersonCamera>();
+    m_pCubeCamera->SetFrustum(XM_PIDIV2, 1.0f, 0.1f, 1000.0f);
+    m_pCubeCamera->SetViewPort(0.0f, 0.0f, 256.0f, 256.0f);
+
+    m_pDebugCamera = std::make_shared<FirstPersonCamera>();
+    m_pDebugCamera->SetFrustum(XM_PIDIV2, 1.0f, 0.1f, 1000.0f);
+    m_pDebugCamera->SetViewPort(0.0f, 0.0f, 256.0f, 256.0f);
 
     // init const value ////////////////////////////////////////////
     DirectionalLight dirLight[4]{};
@@ -268,5 +428,75 @@ bool GameApp::InitResource()
     dirLight[3].direction = XMFLOAT3(-0.577f, -0.577f, -0.577f);
     for (int i = 0; i < 4; ++i)
         m_BasicEffect.SetDirLight(i, dirLight[i]);
+
     return true;
+}
+
+
+void GameApp::DrawScene(bool drawCenterSphere, const Camera& camera, ID3D11RenderTargetView* pRTV, ID3D11DepthStencilView* pDSV)
+{
+    float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    m_pd3dImmediateContext->ClearRenderTargetView(pRTV, black);
+    m_pd3dImmediateContext->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_pd3dImmediateContext->OMSetRenderTargets(1, &pRTV, pDSV);
+
+    BoundingFrustum frustum;
+    BoundingFrustum::CreateFromMatrix(frustum, camera.GetProjMatrixXM());
+    frustum.Transform(frustum, camera.GetLocalToWorldMatrixXM());
+    D3D11_VIEWPORT viewport = camera.GetViewPort();
+    m_pd3dImmediateContext->RSSetViewports(1, &viewport);
+    // draw object
+    m_BasicEffect.SetViewMatrix(camera.GetViewMatrixXM());
+    m_BasicEffect.SetProjMatrix(camera.GetProjMatrixXM());   
+    m_BasicEffect.SetEyePos(camera.GetPosition());
+    m_BasicEffect.SetRenderDefault();
+
+    // only center sphere has refraction of reflection 
+    if (drawCenterSphere)
+    {
+        switch (m_SphereMode)
+        {
+        case SphereMode::None: 
+            m_BasicEffect.SetReflectionEnabled(false);
+            m_BasicEffect.SetRefractionEnabled(false);
+            break;
+        case SphereMode::Reflection:
+            m_BasicEffect.SetReflectionEnabled(true);
+            m_BasicEffect.SetRefractionEnabled(false);
+            break;
+        case SphereMode::Refraction:
+            m_BasicEffect.SetReflectionEnabled(false);
+            m_BasicEffect.SetRefractionEnabled(true);
+            break;
+        }
+        m_BasicEffect.SetTextureCube(m_pDynamicTextureCube->GetShaderResource());
+        m_CenterSphere.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+        m_BasicEffect.SetTextureCube(nullptr);
+    }
+    
+    // draw ground
+    m_BasicEffect.SetReflectionEnabled(false);
+    m_BasicEffect.SetRefractionEnabled(false);
+    
+    m_Ground.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+
+    // 5 cylinder
+    for (auto& cylinder : m_Cylinders)
+    {
+        cylinder.FrustumCulling(frustum);
+        cylinder.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+    }
+    
+    // 5 sphere
+    for (auto& sphere : m_Spheres)
+    {
+        sphere.FrustumCulling(frustum);
+        sphere.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+    }
+
+    // skybox
+    m_SkyboxEffect.SetViewMatrix(camera.GetViewMatrixXM());
+    m_SkyboxEffect.SetProjMatrix(camera.GetProjMatrixXM());
+    m_SkyboxEffect.SetRenderDefault();
+    m_Skybox.Draw(m_pd3dImmediateContext.Get(), m_SkyboxEffect);
 }
