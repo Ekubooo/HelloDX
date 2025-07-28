@@ -13,9 +13,11 @@ build/
 
 nil/
 
-PICTURE RECORD/
+Model/
 
 Texture/ 
+
+Assets/
 
 Debug/
 Release/
