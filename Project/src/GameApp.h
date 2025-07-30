@@ -5,6 +5,7 @@
 #include <WinMin.h>
 #include "d3dApp.h"
 #include "Effects.h"
+#include "Waves.h"
 #include <CameraController.h>
 #include <RenderStates.h>
 #include <GameObject.h>
@@ -30,8 +31,6 @@ public:
 
 private:
     bool InitResource();
-    void DrawScene(bool drawCenterSphere, const Camera& camera, ID3D11RenderTargetView* pRTV, ID3D11DepthStencilView* pDSV);
-
     
 private:
 
@@ -39,31 +38,25 @@ private:
     ModelManager m_ModelManager;
 
     BasicEffect m_BasicEffect;
-    SkyboxEffect m_SkyboxEffect;
 
-    std::unique_ptr<Depth2D> m_pDepthTexture;                   // depth buffer
-    std::unique_ptr<TextureCube> m_pDynamicTextureCube;         // dynamic texture
-    std::unique_ptr<Depth2D> m_pDynamicCubeDepthTexture;        // dynamic skybox depth buffer
-    std::unique_ptr<Texture2D> m_pDebugDynamicCubeTexture;      // debug 
+    std::mt19937 m_RandEngine;
+    std::uniform_int_distribution<uint32_t> m_RowRange;
+    std::uniform_int_distribution<uint32_t> m_ColRange;
+    std::uniform_real_distribution<float> m_MagnitudeRange;
 
-    GameObject m_Spheres[5];
-    GameObject m_CenterSphere;
-    GameObject m_Ground;
-    GameObject m_Cylinders[5];
-    GameObject m_Skybox;
-    GameObject m_DebugSkybox;
+    GameObject m_Land;
+    GameObject m_WireFence;
+    CpuWaves m_CpuWaves;
+    GpuWaves m_GpuWaves;
 
-    std::shared_ptr<FirstPersonCamera> m_pCamera;
-    std::shared_ptr<FirstPersonCamera> m_pCubeCamera;
-    std::shared_ptr<FirstPersonCamera> m_pDebugCamera;
-    FirstPersonCameraController m_CameraController;
+    std::unique_ptr<Depth2D> m_pDepthTexture;
+    std::unique_ptr<Texture2D> m_pLitTexture;
 
-    ImVec2 m_DebugTextureXY;
-    ImVec2 m_DebugTextureWH;
+    std::shared_ptr<ThirdPersonCamera> m_pCamera;
 
-    SphereMode m_SphereMode = SphereMode::Reflection;
-    float m_SphereRad = 0.0f;
-    float m_Eta = 1.0f / 1.51f;
+    float m_BaseTime = 0.0f;
+    int m_WavesMode = 1;
+    bool m_EnabledFog = true;
 
 };
 
