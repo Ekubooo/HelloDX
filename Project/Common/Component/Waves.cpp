@@ -44,9 +44,9 @@ void Waves::InitResource(ID3D11Device* device, uint32_t rows, uint32_t cols,
     Model::CreateFromGeometry(m_Model, device, m_MeshData, cpuWrite);
     m_pModel = &m_Model;
 
-    if (TextureManager::Get().GetTexture("..\\Texture\\water2.dds") == nullptr)
-        TextureManager::Get().CreateFromFile("..\\Texture\\water2.dds", false, true);
-    m_Model.materials[0].Set<std::string>("$Diffuse", "..\\Texture\\water2.dds");
+    if (TextureManager::Get().GetTexture("..\\Assets\\Texture\\water2.dds") == nullptr)
+        TextureManager::Get().CreateFromFile("..\\Assets\\Texture\\water2.dds", false, true);
+    m_Model.materials[0].Set<std::string>("$Diffuse", "..\\Assets\\Texture\\water2.dds");
     m_Model.materials[0].Set<XMFLOAT4>("$AmbientColor", XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f));
     m_Model.materials[0].Set<XMFLOAT4>("$DiffuseColor", XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f));
     m_Model.materials[0].Set<XMFLOAT4>("$SpecularColor", XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f));
@@ -56,6 +56,7 @@ void Waves::InitResource(ID3D11Device* device, uint32_t rows, uint32_t cols,
     m_Model.materials[0].Set<XMFLOAT2>("$TexScale", XMFLOAT2(m_TexU, m_TexV));
 }
 
+// Cpu calculation /////////////////////////////////////////////////
 void CpuWaves::InitResource(ID3D11Device* device,
     uint32_t rows, uint32_t cols, float texU, float texV, float timeStep, float spatialStep,
     float waveSpeed, float damping, float flowSpeedX, float flowSpeedY)
@@ -167,6 +168,8 @@ void CpuWaves::Draw(ID3D11DeviceContext* deviceContext, IEffect& effect)
     GameObject::Draw(deviceContext, effect);
 }
 
+// Gpu calculation /////////////////////////////////////////////////
+
 std::unique_ptr<EffectHelper> GpuWaves::m_pEffectHelper = nullptr;
 
 void GpuWaves::InitResource(ID3D11Device* device,
@@ -178,10 +181,10 @@ void GpuWaves::InitResource(ID3D11Device* device,
     {
         m_pEffectHelper = std::make_unique<EffectHelper>();
         ComPtr<ID3DBlob> blob;
-        HR(D3DReadFileToBlob(L"Shaders/WavesDisturb_CS.cso", blob.ReleaseAndGetAddressOf()));
+        HR(D3DReadFileToBlob(L"Shaders/Wave/WavesDisturb_CS.cso", blob.ReleaseAndGetAddressOf()));
         HR(m_pEffectHelper->AddShader("WavesDisturb", device, blob.Get()));
 
-        HR(D3DReadFileToBlob(L"Shaders/WavesUpdate_CS.cso", blob.ReleaseAndGetAddressOf()));
+        HR(D3DReadFileToBlob(L"Shaders/Wave/WavesUpdate_CS.cso", blob.ReleaseAndGetAddressOf()));
         HR(m_pEffectHelper->AddShader("WavesUpdate", device, blob.Get()));
 
         EffectPassDesc passDesc;

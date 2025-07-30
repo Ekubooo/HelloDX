@@ -126,8 +126,8 @@ void GameApp::DrawScene()
     }
 
 
-    float gray[4] = { 0.75f, 0.75f, 0.75f, 1.0f };
-    m_pd3dImmediateContext->ClearRenderTargetView(GetBackBufferRTV(), gray);
+    float skyblue[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
+    m_pd3dImmediateContext->ClearRenderTargetView(GetBackBufferRTV(), skyblue);
     m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthTexture->GetDepthStencil(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     ID3D11RenderTargetView* pRTVs[1] = { GetBackBufferRTV() };
     m_pd3dImmediateContext->OMSetRenderTargets(1, pRTVs, m_pDepthTexture->GetDepthStencil());

@@ -1,11 +1,3 @@
-//***************************************************************************************
-// Waves.h by X_Jun(MKXJun) (C) 2018-2022 All Rights Reserved.
-// Licensed under the MIT License.
-//
-// 水波加载和绘制类
-// waves loader and render class.
-//***************************************************************************************
-
 #ifndef WAVERENDER_H
 #define WAVERENDER_H
 
