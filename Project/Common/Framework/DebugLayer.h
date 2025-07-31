@@ -1,4 +1,3 @@
-
 #pragma once
 
 #ifndef DEBUG_LAYER_H

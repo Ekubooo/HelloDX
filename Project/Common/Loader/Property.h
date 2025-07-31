@@ -1,4 +1,3 @@
-
 #pragma once
 
 #ifndef PROPERTY_H

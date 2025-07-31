@@ -1,11 +1,3 @@
-//***************************************************************************************
-// IEffects.h by X_Jun(MKXJun) (C) 2018-2022 All Rights Reserved.
-// Licensed under the MIT License.
-//
-// 特效基类定义
-// Effect interface definitions.
-//***************************************************************************************
-
 #ifndef IEFFECT_H
 #define IEFFECT_H
 

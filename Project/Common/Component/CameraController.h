@@ -1,11 +1,3 @@
-//***************************************************************************************
-// Camera.h by X_Jun(MKXJun) (C) 2018-2022 All Rights Reserved.
-// Licensed under the MIT License.
-//
-// 提供第一人称(自由视角)的简易控制器，需要ImGui
-// Provide 1st person(free view) camera controller. ImGui is required.
-//***************************************************************************************
-
 #pragma once
 
 #ifndef CAMERACONTROLLER_H

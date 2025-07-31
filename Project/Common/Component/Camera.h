@@ -1,11 +1,3 @@
-//***************************************************************************************
-// Camera.h by X_Jun(MKXJun) (C) 2018-2022 All Rights Reserved.
-// Licensed under the MIT License.
-//
-// 提供第一人称(自由视角)和第三人称摄像机
-// Provide 1st person(free view) and 3rd person cameras.
-//***************************************************************************************
-
 #pragma once
 
 #ifndef CAMERA_H
