@@ -601,3 +601,102 @@ end run();
 
 ```
 
+
+## 10 Deferred Shading RP
+- gemotry viewer NOT INCLUDE
+- Class GameObject
+    - DATA: Transform, Mesh, Texture, World Matrix.
+    - INIT: Vertex buffer, Index buffer, Const buffer. 
+    - FUNC: Update Const buffer, Draw Index.
+- Class TransForm:
+    - DATA: Scale, Rotation, Position.
+    - FUNC: GameObject Transform date read and store.
+- Class Camera:
+    - DATA: Camera data.
+    - FUNC: Data and Movement operation.
+    - Descendants subclass of different kind of camera.
+- Class Render State 
+    - ComPtr for memory management.
+    - static STATE member.
+    - INIT: Blend Description.
+- Class Effects
+    - Defination of Effects Framework.
+- Class Effect helper 
+    - Update and Bind Operation.
+    - constant buffer management.
+- Class BasicEffect
+    - resource management for GameObject.
+    - const buffer structure.
+    - shader loader framework.
+    - Set and Bind operation.
+- Class Wave
+    - Cpu and Gpu method for wave simulation.
+    - Compute shader and its using rules.
+    - init method for wave effect
+
+- Overall new feture:
+    - multiple vertex buffer input slot for variable shader.
+    - shader reflection.
+    - new EffectHelper, just use*.
+
+
+- Structure:
+```
+GameApp(): D3DApp()         // init 
+   D3DApp global pointer bind this;
+    
+GameApp::Init()
+    D3DApp::Init();             
+        InitMainWindow();           // win32 windows setting
+        InitDirect3D();              
+        InitImGui();                // fonts setting here
+    TextureLoader.Init();
+        CREATE view and LOAD resource;
+    ModelLoader.Init();
+        BIND D3D devices;
+    RenderStates::InitAll()    
+        INIT static Render State;
+    BasicEffect::InitAll()  
+        CREATE and COMPILE shader;
+        INIT and CREATE constant buffer;
+    GameApp::InitResource()
+        LOAD Resources of GameObject;
+        LOAD Wave Data and Compute Shader;
+        INIT Camera and Light;
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+        Timer.tick(); ImGui::NewFrame();
+        GameApp::D3DApp::UpdateScene()     
+            ImGui Controller Changed;                
+            Camera Transform Changed;
+            INIT: (CPU/GPU) InitResource();     // Wave sim method changed
+            Wave.Disturb();                     // Random engine
+            Wave.Update();                      // Gpu version
+                SET Constant buffer value;
+                Pass.GetEffectPass();
+                Pass.Apply();
+                Pass.Dispatch();
+            end Update();
+        end UpdateScene();
+        GameApp::D3DApp::DrawScene():     
+            INIT and CREATE Backup Buffer;
+            ClearView();                        // render target, depth and stencil
+            // draw sequence //////////////////////////////////////
+            INIT and SET Camera ViewPort for RS;
+            SET Rendering States;               
+            For: every GameObject:
+                GameObject.Draw():
+            // draw sequence end //////////////////////////////////
+            ImGui DX11 DrawData();              // trigger of Direct3D Draw.
+            Present();                          // Swap Chain flip and present.
+        end DrawSence();
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+
+```
+
