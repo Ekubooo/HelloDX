@@ -431,6 +431,10 @@ bool D3DApp::InitImGui()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+
+    const char* path = "Assets/Fonts/kaiu.ttf";
+    io.Fonts->AddFontFromFileTTF
+        (path, 26.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // 允许键盘控制
     io.ConfigFlags |= ImGuiConfigFlags_IsSRGB; // 标记当前使用的是SRGB，目前对ImGui源码有修改
     io.ConfigWindowsMoveFromTitleBarOnly = true; // 仅允许标题拖动

@@ -10,7 +10,8 @@ target(targetName)
     -- shader
     add_rules("hlsl_shader_complier")
     add_headerfiles("Shaders/**.hlsl|Shaders/**.hlsli")
-    add_files("Shaders/**.hlsl|Shaders/**.hlsli")
+    add_files("Shaders/**.hlsl")
+    add_files("Shaders/**.hlsli")
     -- assert
     add_rules("asset_file")
 target_end() 
