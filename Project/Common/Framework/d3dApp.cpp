@@ -432,7 +432,7 @@ bool D3DApp::InitImGui()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
-    const char* path = "Assets/Fonts/kaiu.ttf";
+    const char* path = "Assets\\Fonts\\kaiu.ttf";
     io.Fonts->AddFontFromFileTTF
         (path, 26.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // 允许键盘控制

@@ -9,6 +9,7 @@ target(targetName)
     add_files("**.cpp")
     -- shader
     add_rules("hlsl_shader_complier")
+    add_rules("hlsl_shader_copy")
     add_headerfiles("Shaders/**.hlsl|Shaders/**.hlsli")
     add_files("Shaders/**.hlsl")
     add_files("Shaders/**.hlsli")
