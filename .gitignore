@@ -13,12 +13,25 @@ build/
 
 nil/
 
+<<<<<<< HEAD
 Model/
 
 Texture/ 
 
 Assets/
+=======
+Record/
+>>>>>>> dev
 
+Texture/
+
+Model/
+
+Assets/
+
+assimp/
+
+# Build
 Debug/
 Release/
 x64/
@@ -33,6 +46,7 @@ vsxmake2022/
 **.gif
 **.png
 **.jpg
+**.txt
 
 **.cso
 **.mbo
@@ -46,5 +60,9 @@ vsxmake2022/
 **.ini
 **.exe
 
+<<<<<<< HEAD
 *.lastcodeanalysissucceeded
+=======
+**.lastcodeanalysissucceeded
+>>>>>>> dev
 !dxtex.exe

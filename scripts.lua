@@ -60,5 +60,8 @@ rule("asset_file")
         if os.exists(path.join(target:scriptdir(),"../Model")) then
             os.cp(path.join(target:scriptdir(),"../Model"), path.join(target:targetdir(),".."))
         end
+        if os.exists(path.join(target:scriptdir(),"../Assets")) then
+            os.cp(path.join(target:scriptdir(),"../Assets"), path.join(target:targetdir(),".."))
+        end
     end)
 rule_end()
