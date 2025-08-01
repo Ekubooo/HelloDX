@@ -8,7 +8,6 @@ target(targetName)
     add_headerfiles("**.h")
     add_files("**.cpp")
     -- shader
-    add_rules("hlsl_shader_complier")
     add_rules("hlsl_shader_copy")
     add_headerfiles("Shaders/**.hlsl|Shaders/**.hlsli")
     add_files("Shaders/**.hlsl")
