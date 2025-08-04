@@ -299,7 +299,8 @@ void DeferredEffect::ComputeLightingDefault(
     ID3D11ShaderResourceView* GBuffers[4],
     D3D11_VIEWPORT viewport)
 {
-    std::string passStrs[] = {
+    std::string passStrs[] = 
+    {
         "Lighting_Basic_MaskStencil_" + std::to_string(pImpl->m_MsaaSamples) + "xMSAA",
         "Lighting_Basic_Deferred_PerPixel_" + std::to_string(pImpl->m_MsaaSamples) + "xMSAA",
         "Lighting_Basic_Deferred_PerSample_" + std::to_string(pImpl->m_MsaaSamples) + "xMSAA"

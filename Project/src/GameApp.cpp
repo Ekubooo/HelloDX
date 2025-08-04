@@ -314,7 +314,7 @@ bool GameApp::InitResource()
     m_TextureManager.CreateFromFile("..\\Assets\\Texture\\Clouds.dds");
 
     // GameObject Init /////////////////////////////////////////////
-    m_Sponza.SetModel(m_ModelManager.CreateFromFile("..\\Assets\\Model\\Sponza\\Sponza.gltf"));
+    m_Sponza.SetModel(m_ModelManager.CreateFromFile("..\\Assets\\Model\\Sponza\\sponza.gltf"));
     m_Sponza.GetTransform().SetScale(0.05f, 0.05f, 0.05f);
 
     m_ModelManager.CreateFromGeometry("skyboxCube", Geometry::CreateBox());

@@ -88,7 +88,7 @@ bool SkyboxEffect::InitAll(ID3D11Device * device)
 
     pImpl->m_pEffectHelper = std::make_unique<EffectHelper>();
 
-    pImpl->m_pEffectHelper->SetBinaryCacheDirectory(L"Shaders\\Cache");
+    pImpl->m_pEffectHelper->SetBinaryCacheDirectory(L"Shaders\\Deferred\\Cache");
 
     Microsoft::WRL::ComPtr<ID3DBlob> blob;
     D3D_SHADER_MACRO defines[] = {
@@ -100,7 +100,7 @@ bool SkyboxEffect::InitAll(ID3D11Device * device)
     // 创建顶点着色器
     //
 
-    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("SkyboxVS", L"Shaders\\Skybox.hlsl", 
+    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("SkyboxVS", L"Shaders\\Deferred\\Skybox.hlsl", 
         device, "SkyboxVS", "vs_5_0", defines, blob.GetAddressOf()));
     // 创建顶点布局
     HR(device->CreateInputLayout(VertexPosNormalTex::GetInputLayout(), ARRAYSIZE(VertexPosNormalTex::GetInputLayout()),
@@ -115,7 +115,7 @@ bool SkyboxEffect::InitAll(ID3D11Device * device)
         std::string msaaSamplesStr = std::to_string(msaaSamples);
         defines[0].Definition = msaaSamplesStr.c_str();
         std::string shaderName = "Skybox_" + msaaSamplesStr + "xMSAA_PS";
-        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderName, L"Shaders\\Skybox.hlsl",
+        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderName, L"Shaders\\Deferred\\Skybox.hlsl",
             device, "SkyboxPS", "ps_5_0", defines));
 
         // ******************

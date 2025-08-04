@@ -82,14 +82,14 @@ bool ForwardEffect::InitAll(ID3D11Device * device)
 
     pImpl->m_pEffectHelper = std::make_unique<EffectHelper>();
 
-    pImpl->m_pEffectHelper->SetBinaryCacheDirectory(L"Shaders\\Cache");
+    pImpl->m_pEffectHelper->SetBinaryCacheDirectory(L"Shaders\\Deferred\\Cache");
 
     Microsoft::WRL::ComPtr<ID3DBlob> blob;
 
     // ******************
     // 创建顶点着色器
     //
-    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("GeometryVS", L"Shaders\\Forward.hlsl", 
+    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("GeometryVS", L"Shaders\\Deferred\\Forward.hlsl", 
         device, "GeometryVS", "vs_5_0", nullptr, blob.GetAddressOf()));
     // 创建顶点布局
     HR(device->CreateInputLayout(VertexPosNormalTex::GetInputLayout(), ARRAYSIZE(VertexPosNormalTex::GetInputLayout()),
@@ -98,7 +98,7 @@ bool ForwardEffect::InitAll(ID3D11Device * device)
     // ******************
     // 创建像素着色器
     //
-    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("ForwardPS", L"Shaders\\Forward.hlsl", 
+    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("ForwardPS", L"Shaders\\Deferred\\Forward.hlsl", 
         device, "ForwardPS", "ps_5_0"));
 
     // ******************
