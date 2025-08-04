@@ -9,10 +9,7 @@ using namespace DirectX;
 
 # pragma warning(disable: 26812)
 
-
-//
-// DeferredEffect::Impl 需要先于DeferredEffect的定义
-//
+// DeferredEffect::Impl need to be difine befor DeferredEffect 
 
 class DeferredEffect::Impl
 {
@@ -88,31 +85,29 @@ bool DeferredEffect::InitAll(ID3D11Device * device)
 
     pImpl->m_pEffectHelper = std::make_unique<EffectHelper>();
 
-    pImpl->m_pEffectHelper->SetBinaryCacheDirectory(L"Shaders\\Cache");
+    pImpl->m_pEffectHelper->SetBinaryCacheDirectory(L"Shaders\\Deferred\\Cache");
 
     Microsoft::WRL::ComPtr<ID3DBlob> blob;
-    D3D_SHADER_MACRO defines[] = {
+    D3D_SHADER_MACRO defines[] = 
+    {
         {"MSAA_SAMPLES", "1"},
         {nullptr, nullptr}
     };
 
-    // ******************
-    // 创建顶点着色器
-    //
-    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("FullScreenTriangleVS", L"Shaders\\FullScreenTriangle.hlsl",
+    // Create vertex shader ///////////////////////////////////////////////////
+
+    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("FullScreenTriangleVS", L"Shaders\\Deferred\\FullScreenTriangle.hlsl",
         device, "FullScreenTriangleVS", "vs_5_0", defines));
-    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("GeometryVS", L"Shaders\\GBuffer.hlsl", 
+    HR(pImpl->m_pEffectHelper->CreateShaderFromFile("GeometryVS", L"Shaders\\Deferred\\GBuffer.hlsl", 
         device, "GeometryVS", "vs_5_0", defines, blob.GetAddressOf()));
-    // 创建顶点布局
+        // Vertex layout 
     HR(device->CreateInputLayout(VertexPosNormalTex::GetInputLayout(), ARRAYSIZE(VertexPosNormalTex::GetInputLayout()),
         blob->GetBufferPointer(), blob->GetBufferSize(), pImpl->m_pVertexPosNormalTexLayout.ReleaseAndGetAddressOf()));
 
     int msaaSamples = 1;
     while (msaaSamples <= 8)
     {
-        // ******************
-        // 创建像素着色器
-        //
+    // Create pixal shader ////////////////////////////////////////////////////
         std::string msaaSamplesStr = std::to_string(msaaSamples);
         defines[0].Definition = msaaSamplesStr.c_str();
         std::string shaderNames[] = { 
@@ -124,22 +119,20 @@ bool DeferredEffect::InitAll(ID3D11Device * device)
             "DebugPosZGrad" + msaaSamplesStr + "xMSAA_PS",
         };
 
-        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[0], L"Shaders\\GBuffer.hlsl",
+        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[0], L"Shaders\\Deferred\\GBuffer.hlsl",
             device, "GBufferPS", "ps_5_0", defines));
-        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[1], L"Shaders\\GBuffer.hlsl",
+        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[1], L"Shaders\\Deferred\\GBuffer.hlsl",
             device, "RequiresPerSampleShadingPS", "ps_5_0", defines));
-        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[2], L"Shaders\\BasicDeferred.hlsl",
+        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[2], L"Shaders\\Deferred\\BasicDeferred.hlsl",
             device, "BasicDeferredPS", "ps_5_0", defines));
-        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[3], L"Shaders\\BasicDeferred.hlsl",
+        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[3], L"Shaders\\Deferred\\BasicDeferred.hlsl",
             device, "BasicDeferredPerSamplePS", "ps_5_0", defines));
-        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[4], L"Shaders\\GBuffer.hlsl",
+        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[4], L"Shaders\\Deferred\\GBuffer.hlsl",
             device, "DebugNormalPS", "ps_5_0", defines));
-        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[5], L"Shaders\\GBuffer.hlsl",
+        HR(pImpl->m_pEffectHelper->CreateShaderFromFile(shaderNames[5], L"Shaders\\Deferred\\GBuffer.hlsl",
             device, "DebugPosZGradPS", "ps_5_0", defines));
 
-        // ******************
-        // 创建通道
-        //
+        // Create Pass ////////////////////////////////////////////////////////
         EffectPassDesc passDesc;
         passDesc.nameVS = "GeometryVS";
         passDesc.namePS = shaderNames[0].c_str();
@@ -156,7 +149,7 @@ bool DeferredEffect::InitAll(ID3D11Device * device)
         HR(pImpl->m_pEffectHelper->AddEffectPass(passNames[0], device, &passDesc));
         {
             auto pPass = pImpl->m_pEffectHelper->GetEffectPass(passNames[0]);
-            // 注意：反向Z => GREATER_EQUAL测试
+            // Note: inverse Z means GREATER_EQUAL test
             pPass->SetDepthStencilState(RenderStates::DSSGreaterEqual.Get(), 0);
         }
 
@@ -200,7 +193,7 @@ bool DeferredEffect::InitAll(ID3D11Device * device)
     
     pImpl->m_pEffectHelper->SetSamplerStateByName("g_Sam", RenderStates::SSAnistropicWrap16x.Get());
 
-    // 设置调试对象名
+    // debug setting 
 #if (defined(DEBUG) || defined(_DEBUG)) && (GRAPHICS_DEBUGGER_OBJECT_NAME)
     SetDebugObjectName(pImpl->m_pVertexPosNormalTexLayout.Get(), "DeferredEffect.VertexPosNormalTexLayout");
 #endif

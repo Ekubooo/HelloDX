@@ -1,11 +1,3 @@
-//***************************************************************************************
-// Effects.h by X_Jun(MKXJun) (C) 2018-2022 All Rights Reserved.
-// Licensed under the MIT License.
-//
-// 简易特效管理框架
-// Simple effect management framework.
-//***************************************************************************************
-
 #ifndef EFFECTS_H
 #define EFFECTS_H
 
@@ -23,36 +15,18 @@ public:
     ForwardEffect(ForwardEffect&& moveFrom) noexcept;
     ForwardEffect& operator=(ForwardEffect&& moveFrom) noexcept;
 
-    // 获取单例
+    // singleton get
     static ForwardEffect& Get();
 
-    // 初始化所需资源
     bool InitAll(ID3D11Device* device);
-
-    //
-    // IEffectTransform
-    //
 
     void XM_CALLCONV SetWorldMatrix(DirectX::FXMMATRIX W) override;
     void XM_CALLCONV SetViewMatrix(DirectX::FXMMATRIX V) override;
     void XM_CALLCONV SetProjMatrix(DirectX::FXMMATRIX P) override;
 
-    //
-    // IEffectMaterial
-    //
-
     void SetMaterial(const Material& material) override;
 
-    //
-    // IEffectMeshData
-    //
-
     MeshDataInput GetInputData(const MeshData& meshData) override;
-
-
-    //
-    // ForwardEffect
-    //
 
     void SetLightBuffer(ID3D11ShaderResourceView* lightBuffer);
 
@@ -60,13 +34,13 @@ public:
     void SetFaceNormals(bool enable);
     void SetVisualizeLightCount(bool enable);
 
-    // 默认状态来绘制
+    // defualt pass draw 
     void SetRenderDefault();
 
-    // 进行Pre-Z通道绘制
+    // Pre-Z pass draw 
     void SetRenderPreZPass();
 
-    // 应用常量缓冲区和纹理资源的变更
+    // constant buffer and texture resource apply 
     void Apply(ID3D11DeviceContext* deviceContext) override;
 
 private:
@@ -84,55 +58,30 @@ public:
     SkyboxEffect(SkyboxEffect&& moveFrom) noexcept;
     SkyboxEffect& operator=(SkyboxEffect&& moveFrom) noexcept;
 
-    // 获取单例
     static SkyboxEffect& Get();
 
-    // 初始化所需资源
     bool InitAll(ID3D11Device* device);
 
-
-    //
-    // IEffectTransform
-    //
-
-    // 无用
     void XM_CALLCONV SetWorldMatrix(DirectX::FXMMATRIX W) override;
 
     void XM_CALLCONV SetViewMatrix(DirectX::FXMMATRIX V) override;
     void XM_CALLCONV SetProjMatrix(DirectX::FXMMATRIX P) override;
 
-    //
-    // IEffectMaterial
-    //
-
     void SetMaterial(const Material& material) override;
 
-    //
-    // IEffectMeshData
-    //
 
     MeshDataInput GetInputData(const MeshData& meshData) override;
 
-    // 
-    // SkyboxEffect
-    //
-
-    // 默认状态来绘制
     void SetRenderDefault();
 
-    // 设置深度图
+    // depth texture 
     void SetDepthTexture(ID3D11ShaderResourceView* depthTexture);
-    // 设置场景渲染图
+    // Set: scene render texture 
     void SetLitTexture(ID3D11ShaderResourceView* litTexture);
 
-    // 设置MSAA采样等级
+    // MSAA sample level
     void SetMsaaSamples(UINT msaaSamples);
 
-    //
-    // IEffect
-    //
-
-    // 应用常量缓冲区和纹理资源的变更
     void Apply(ID3D11DeviceContext* deviceContext) override;
 
 private:
@@ -151,35 +100,17 @@ public:
     DeferredEffect(DeferredEffect&& moveFrom) noexcept;
     DeferredEffect& operator=(DeferredEffect&& moveFrom) noexcept;
 
-    // 获取单例
     static DeferredEffect& Get();
 
-    // 初始化所需资源
     bool InitAll(ID3D11Device* device);
-
-    //
-    // IEffectTransform
-    //
 
     void XM_CALLCONV SetWorldMatrix(DirectX::FXMMATRIX W) override;
     void XM_CALLCONV SetViewMatrix(DirectX::FXMMATRIX V) override;
     void XM_CALLCONV SetProjMatrix(DirectX::FXMMATRIX P) override;
 
-    //
-    // IEffectMaterial
-    //
-
     void SetMaterial(const Material& material) override;
 
-    //
-    // IEffectMeshData
-    //
-
     MeshDataInput GetInputData(const MeshData& meshData) override;
-
-    // 
-    // BasicDeferredEffect
-    //
 
     void SetMsaaSamples(UINT msaaSamples);
 
@@ -190,22 +121,22 @@ public:
 
     void SetCameraNearFar(float nearZ, float farZ);
 
-    // 绘制G缓冲区
+    // GBuffer write 
     void SetRenderGBuffer();
 
-    // 将法线G-Buffer渲染到目标纹理
+    // render normal G-Buffer to target Texture
     void DebugNormalGBuffer(ID3D11DeviceContext* deviceContext,
         ID3D11RenderTargetView* rtv,
         ID3D11ShaderResourceView* normalGBuffer,
         D3D11_VIEWPORT viewport);
 
-    // 将深度值梯度的G-Buffer渲染到到目标纹理
+    // render ZGrad G-Buffer to target Texture
     void DebugPosZGradGBuffer(ID3D11DeviceContext* deviceContext,
         ID3D11RenderTargetView* rtv,
         ID3D11ShaderResourceView* posZGradGBuffer,
         D3D11_VIEWPORT viewport);
 
-    // 传统延迟渲染
+    // classic defer RP
     void ComputeLightingDefault(ID3D11DeviceContext* deviceContext,
         ID3D11RenderTargetView* litBufferRTV,
         ID3D11DepthStencilView* depthBufferReadOnlyDSV,
@@ -213,11 +144,6 @@ public:
         ID3D11ShaderResourceView* GBuffers[4],
         D3D11_VIEWPORT viewport);
 
-    //
-    // IEffect
-    //
-
-    // 应用常量缓冲区和纹理资源的变更
     void Apply(ID3D11DeviceContext* deviceContext) override;
 
 private:

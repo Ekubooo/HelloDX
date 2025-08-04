@@ -9,11 +9,6 @@ using namespace DirectX;
 
 # pragma warning(disable: 26812)
 
-
-//
-// ForwardEffect::Impl 需要先于ForwardEffect的定义
-//
-
 class ForwardEffect::Impl
 {
 public:
