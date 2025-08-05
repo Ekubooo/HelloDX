@@ -308,6 +308,7 @@ void DeferredEffect::ComputeLightingDefault(
 
     // 清屏
     const float zeros[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    const float SkyBlue[4] = { 0.0f, 0.5f, 1.0f, 0.0f };
     deviceContext->ClearRenderTargetView(litBufferRTV, zeros);
     // 设置全屏三角形
     deviceContext->IASetInputLayout(nullptr);

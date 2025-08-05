@@ -267,7 +267,6 @@ void GameApp::DrawScene()
 
         if (ImGui::Begin("PosZGrad"))
         {
-
             m_DeferredEffect.DebugPosZGradGBuffer(m_pd3dImmediateContext.Get(), m_pDebugPosZGradGBuffer->GetRenderTarget(),
                 m_pGBufferSRVs[2], m_pCamera->GetViewPort());
             ImVec2 winSize = ImGui::GetWindowSize();
@@ -488,8 +487,8 @@ void GameApp::ResizeBuffers(UINT width, UINT height, UINT msaaSamples)
 
 void GameApp::RenderForward(bool doPreZ)
 {
-    float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_pd3dImmediateContext->ClearRenderTargetView(m_pLitBuffer->GetRenderTarget(), black);
+    float SkyBlue[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
+    m_pd3dImmediateContext->ClearRenderTargetView(m_pLitBuffer->GetRenderTarget(), SkyBlue);
     // note: inverse Z axis, far penal equals 0
     m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthBuffer->GetDepthStencil(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
@@ -534,9 +533,9 @@ void GameApp::RenderGBuffer()
 
     if (m_ClearGBuffers)
     {
-        float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        float SkyBlue[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
         for (auto rtv : m_pGBufferRTVs)
-            m_pd3dImmediateContext->ClearRenderTargetView(rtv, black);
+            m_pd3dImmediateContext->ClearRenderTargetView(rtv, SkyBlue);
     }
     m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthBuffer->GetDepthStencil(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
     

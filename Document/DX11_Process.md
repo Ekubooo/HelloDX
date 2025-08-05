@@ -602,97 +602,71 @@ end run();
 ```
 
 
-## 10 Deferred Shading RP
+## 10 Deferred RP
 - gemotry viewer NOT INCLUDE
-- Class GameObject
-    - DATA: Transform, Mesh, Texture, World Matrix.
-    - INIT: Vertex buffer, Index buffer, Const buffer. 
-    - FUNC: Update Const buffer, Draw Index.
-- Class TransForm:
-    - DATA: Scale, Rotation, Position.
-    - FUNC: GameObject Transform date read and store.
-- Class Camera:
-    - DATA: Camera data.
-    - FUNC: Data and Movement operation.
-    - Descendants subclass of different kind of camera.
-- Class Render State 
-    - ComPtr for memory management.
-    - static STATE member.
-    - INIT: Blend Description.
-- Class Effects
-    - Defination of Effects Framework.
-- Class Effect helper 
-    - Update and Bind Operation.
-    - constant buffer management.
-- Class BasicEffect
-    - resource management for GameObject.
-    - const buffer structure.
-    - shader loader framework.
-    - Set and Bind operation.
-- Class Wave
-    - Cpu and Gpu method for wave simulation.
-    - Compute shader and its using rules.
-    - init method for wave effect
-
-- Overall new feture:
-    - multiple vertex buffer input slot for variable shader.
-    - shader reflection.
-    - new EffectHelper, just use*.
-
 
 - Structure:
 ```
-GameApp(): D3DApp()         // init 
-   D3DApp global pointer bind this;
+GameApp(): D3DApp()
+   D3DApp global pointer;
     
 GameApp::Init()
     D3DApp::Init();             
-        InitMainWindow();           // win32 windows setting
+        InitMainWindow();
         InitDirect3D();              
         InitImGui();                // fonts setting here
-    TextureLoader.Init();
+    TextureLoader.Init()
         CREATE view and LOAD resource;
-    ModelLoader.Init();
+    ModelLoader.Init()
         BIND D3D devices;
+    GPUTimer.Init();
+        timer for Performance Viewer;
     RenderStates::InitAll()    
         INIT static Render State;
-    BasicEffect::InitAll()  
+    Effect::InitAll()               // effect for forward or defer RP
         CREATE and COMPILE shader;
-        INIT and CREATE constant buffer;
+        INIT and CREATE: constant Buffer;
+        INIT and CREATE: effect Pass;
     GameApp::InitResource()
-        LOAD Resources of GameObject;
-        LOAD Wave Data and Compute Shader;
         INIT Camera and Light;
+        LOAD Assets;                        // texture and model
+        InitLightParams();
+        ResizeLights();
+        UpdateLights();
+    end InitResource();
 end Init();
 
 D3DApp::Run()
     timer reset;
     while loop:
+
         Timer.tick(); ImGui::NewFrame();
-        GameApp::D3DApp::UpdateScene()     
-            ImGui Controller Changed;                
-            Camera Transform Changed;
-            INIT: (CPU/GPU) InitResource();     // Wave sim method changed
-            Wave.Disturb();                     // Random engine
-            Wave.Update();                      // Gpu version
-                SET Constant buffer value;
-                Pass.GetEffectPass();
-                Pass.Apply();
-                Pass.Dispatch();
-            end Update();
+        GameApp::D3DApp::UpdateScene():   
+            CameraController.Update();      // camera changed
+            ImGui::Begin()
+                Effect.SetMsaaSamples();
+                GameApp::UpdateLights();
+                GameApp::ResizeLights(); 
+                Const buffers changed by operation;
+            ImGui::End();
+            GPUTimer.reset();               // if needed 
+            Effect.SetViewMatrix();         
+            SetupLights();                  // map and unmap
+            GameObject.FrustumCulling();    // Visual Cone collision setting;
         end UpdateScene();
+
         GameApp::D3DApp::DrawScene():     
             INIT and CREATE Backup Buffer;
-            ClearView();                        // render target, depth and stencil
-            // draw sequence //////////////////////////////////////
-            INIT and SET Camera ViewPort for RS;
-            SET Rendering States;               
-            For: every GameObject:
-                GameObject.Draw():
-            // draw sequence end //////////////////////////////////
-            ImGui DX11 DrawData();              // trigger of Direct3D Draw.
-            Present();                          // Swap Chain flip and present.
+            Forward RP / Defer RP           // forward, f+ or defer RP
+            RenderSkybox(); 
+            ImGui Performance Viewer;
+            ImGui Gbuffer Viewer;           // normal, Albedo and Z Grad(Depth Gradient?)
+            ImGui::Render();
+            DeviceContext.OMSetRenderTargets();
+            ImGui_DX11_RenderDrawData();              
+            Present();                          
         end DrawSence();
+
     end loop;
 end run();
 
@@ -700,3 +674,57 @@ end run();
 
 ```
 
+- Defer RP structure:
+```
+Geometry pass:
+RenderGBuffer()
+    view.clear();               // RTs, depth and stencil
+    Device.RSSetViewports();
+    GpuTimer.start();           // timer for Geometry pass
+        Effect.SetRenderGBuffer();
+        deviceContext.OMSetRenderTargets();     // output merge RTs
+        Scene.Draw();                           // GameObject?
+        OMRT unbind;
+    GpuTimer.stop();
+Geometry pass end;
+
+Lighting pass:
+GpuTimer.start();               // timer for Lighting pass
+    view.clear();               // RTs only 
+    deviceContext.IASetInputLayout();           // Input Assemble
+    deviceContext.IASetPrimitiveTopology();
+    deviceContext.IASetVertexBuffers();         
+    deviceContext.RSSetViewports();             // Render state
+                                                // MSAA for pass 1(sample Mask) and 3(per sample)
+    for: three Pass (condition: MSAA)           // pass2: normal draw(per pixal)
+        Pass.Apply(deviceContext);              
+        deviceContext->OMSetRenderTargets();
+        deviceContext->Draw(); 
+    end for;
+    deviceContext.OMRT.clear();
+    ShaderResourceView.clear();
+    deviceContext.VS&PS.clear();
+GpuTimer.stop();
+Lighting pass end;
+
+```
+
+- GBuffer viewer: Normal, Z Grad, Albedo (???)
+```
+ImGui::Begin();
+    Effect.function();
+    Win.Resize();
+    ImGui::Image(GBuffer, winSize);
+ImGui::End();
+```
+
+
+- Forward+ RP structure:
+```
+    RenderForward();
+```
+
+- shader structure
+```
+
+```
