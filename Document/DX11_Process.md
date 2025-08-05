@@ -601,3 +601,130 @@ end run();
 
 ```
 
+
+## 10 Deferred RP
+- gemotry viewer NOT INCLUDE
+
+- Structure:
+```
+GameApp(): D3DApp()
+   D3DApp global pointer;
+    
+GameApp::Init()
+    D3DApp::Init();             
+        InitMainWindow();
+        InitDirect3D();              
+        InitImGui();                // fonts setting here
+    TextureLoader.Init()
+        CREATE view and LOAD resource;
+    ModelLoader.Init()
+        BIND D3D devices;
+    GPUTimer.Init();
+        timer for Performance Viewer;
+    RenderStates::InitAll()    
+        INIT static Render State;
+    Effect::InitAll()               // effect for forward or defer RP
+        CREATE and COMPILE shader;
+        INIT and CREATE: constant Buffer;
+        INIT and CREATE: effect Pass;
+    GameApp::InitResource()
+        INIT Camera and Light;
+        LOAD Assets;                        // texture and model
+        InitLightParams();
+        ResizeLights();
+        UpdateLights();
+    end InitResource();
+end Init();
+
+D3DApp::Run()
+    timer reset;
+    while loop:
+
+        Timer.tick(); ImGui::NewFrame();
+        GameApp::D3DApp::UpdateScene():   
+            CameraController.Update();      // camera changed
+            ImGui::Begin()
+                Effect.SetMsaaSamples();
+                GameApp::UpdateLights();
+                GameApp::ResizeLights(); 
+                Const buffers changed by operation;
+            ImGui::End();
+            GPUTimer.reset();               // if needed 
+            Effect.SetViewMatrix();         
+            SetupLights();                  // map and unmap
+            GameObject.FrustumCulling();    // Visual Cone collision setting;
+        end UpdateScene();
+
+        GameApp::D3DApp::DrawScene():     
+            INIT and CREATE Backup Buffer;
+            Forward RP / Defer RP           // forward, f+ or defer RP
+            RenderSkybox(); 
+            ImGui Performance Viewer;
+            ImGui Gbuffer Viewer;           // normal, Albedo and Z Grad(Depth Gradient?)
+            ImGui::Render();
+            DeviceContext.OMSetRenderTargets();
+            ImGui_DX11_RenderDrawData();              
+            Present();                          
+        end DrawSence();
+
+    end loop;
+end run();
+
+~GameApp(): ~D3DApp();
+
+```
+
+- Defer RP structure:
+```
+Geometry pass:
+RenderGBuffer()
+    view.clear();               // RTs, depth and stencil
+    Device.RSSetViewports();
+    GpuTimer.start();           // timer for Geometry pass
+        Effect.SetRenderGBuffer();
+        deviceContext.OMSetRenderTargets();     // output merge RTs
+        Scene.Draw();                           // GameObject?
+        OMRT unbind;
+    GpuTimer.stop();
+Geometry pass end;
+
+Lighting pass:
+GpuTimer.start();               // timer for Lighting pass
+    view.clear();               // RTs only 
+    deviceContext.IASetInputLayout();           // Input Assemble
+    deviceContext.IASetPrimitiveTopology();
+    deviceContext.IASetVertexBuffers();         
+    deviceContext.RSSetViewports();             // Render state
+                                                // MSAA for pass 1(sample Mask) and 3(per sample)
+    for: three Pass (condition: MSAA)           // pass2: normal draw(per pixal)
+        Pass.Apply(deviceContext);              
+        deviceContext->OMSetRenderTargets();
+        deviceContext->Draw(); 
+    end for;
+    deviceContext.OMRT.clear();
+    ShaderResourceView.clear();
+    deviceContext.VS&PS.clear();
+GpuTimer.stop();
+Lighting pass end;
+
+```
+
+- GBuffer viewer: Normal, Z Grad, Albedo (???)
+```
+ImGui::Begin();
+    Effect.function();
+    Win.Resize();
+    ImGui::Image(GBuffer, winSize);
+ImGui::End();
+```
+
+
+- Forward+ RP structure:
+```
+    RenderForward();
+```
+
+- shader structure
+```
+
+```
